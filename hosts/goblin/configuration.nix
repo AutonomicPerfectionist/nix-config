@@ -172,7 +172,7 @@
         enable = true;
         hostname = "matrix.beensoup.net";
         internalHTTPPort = 8083;
-        passFile = config.age.secrets.matrix-pass.path
+        passFile = config.age.secrets.matrix-pass.path;
       };
     };
   };

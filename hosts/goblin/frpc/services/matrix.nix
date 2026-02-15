@@ -42,7 +42,9 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable {
+  config = let
+    baseUrl = "https://${cfg.hostname}";
+  in lib.mkIf cfg.enable {
     # assertions = [
     #   {
     #     assertion = config.goblin-frpc.enable == true;
@@ -61,78 +63,98 @@ in
     #   ];
     # });
 
-    # environment.systemPackages = [ cfg.package ];
-
-    # environment.etc."nextcloud-admin-pass".text = "password";
-    # services.nextcloud = {
-    #   enable = true;
-    #   package = cfg.package;
-    #   hostName = cfg.hostname;
-    #   maxUploadSize = "10G";
-    #   datadir = cfg.datadir;
-    #   config = {
-    #     adminpassFile = "/etc/nextcloud-admin-pass";
-    #     dbtype = "pgsql";
-    #     dbhost = "localhost";
-    #     dbuser = "nextcloud";
-    #     dbname = "nextcloud";
-    #     dbpassFile = cfg.dbPassFile;
-    #   };
-    #   settings = {
-    #     trusted_domains = [ "192.168.5.227" ];
-    #     overwriteprotocol = "https";
-    #   };
-    #   extraApps = cfg.extraApps;
-    #   configureRedis = true;
-    #   caching.redis = true;
-    # };
+    services.matrix-synapse = {
+      enable = true;
+      settings.server_name = cfg.hostname;
+      settings.public_baseurl = baseUrl;
+      settings.listeners = [
+        {
+          port = 8008;
+          bind_addresses = [ "::1" ];
+          type = "http";
+          tls = false;
+          x_forwarded = true;
+          resources = [
+            {
+              names = [
+                "client"
+                "federation"
+              ];
+              compress = true;
+            }
+          ];
+        }
+      ];
+    };
 
     # Override the nextcloud service's nginx entry so it listens on our custom port.
-    # services.nginx = {
-    #   enable = true;
-    #   virtualHosts."nc.beensoup.net" = {
-    #     listen = [
-    #       {
-    #         addr = "127.0.0.1";
-    #         port = cfg.internalHTTPPort;
-    #         ssl = false;
-    #       }
-    #     ];
-    #   };
-    # };
+    services.nginx = let
+      serverConfig = {
+        "m.server" = "${baseUrl}:443";
+      };
+      clientConfig = {
+        "m.homeserver" = {
+          base_url = baseUrl
+        };
+      };
+      mkWellKnown = data: ''
+        default_type application/json;
+        add_header Access-Control-Allow-Origin *;
+        return 200 '${builtins.toJSON data}';
+      '';
+    in {
+      enable = true;
+      virtualHosts."${cfg.hostname}" = {
+        locations."= /.well-known/matrix/server".extraConfig = mkWellKnown serverConfig;
+        locations."= /.well-known/matrix/client".extraConfig = mkWellKnown serverConfig;
+        listen = [
+          {
+            addr = "127.0.0.1";
+            port = cfg.internalHTTPPort;
+            ssl = false;
+          }
+        ];
+        locations."/".extraConfig = ''
+          return 404;
+        '';
 
-    # goblin-frpc.proxies = [
-    #   {
-    #     name = "nextcloud";
-    #     type = "http";
-    #     localIP = "127.0.0.1";
-    #     localPort = cfg.internalHTTPPort;
-    #     customDomains = [ cfg.hostname ];
-    #     hostHeaderRewrite = "";
-    #     requestHeaders.set.x-from-where = "frp";
-    #     responseHeaders.set.foo = "bar";
-    #     healthCheck = {
-    #       type = "http";
-    #       # frpc will send a GET http request '/status' to local http service
-    #       # http service is alive when it return 2xx http response code
-    #       path = "/status.php";
-    #       intervalSeconds = 60;
-    #       maxFailed = 3;
-    #       timeoutSeconds = 5;
-    #       # set health check headers
-    #       httpHeaders = [
-    #         {
-    #           name = "User-Agent";
-    #           value = "FRP-Healthcheck";
-    #         }
-    #         {
-    #           name = "x-from-where";
-    #           value = "frp";
-    #         }
-    #       ];
-    #     };
-    #   }
-    # ];
+        locations."_matrix".proxyPass = "http://[::1]:8008";
+        locations."_synapse/client".proxyPass = "http://[::1]:8008";
+      };
+    };
+
+    goblin-frpc.proxies = [
+      {
+        name = "matrix";
+        type = "http";
+        localIP = "127.0.0.1";
+        localPort = cfg.internalHTTPPort;
+        customDomains = [ cfg.hostname ];
+        hostHeaderRewrite = "";
+        requestHeaders.set.x-from-where = "frp";
+        responseHeaders.set.foo = "bar";
+        # healthCheck = {
+        #   type = "http";
+        #   # frpc will send a GET http request '/status' to local http service
+        #   # http service is alive when it return 2xx http response code
+        #   path = "/status.php";
+        #   intervalSeconds = 60;
+        #   maxFailed = 3;
+        #   timeoutSeconds = 5;
+        #   # set health check headers
+        #   httpHeaders = [
+        #     {
+        #       name = "User-Agent";
+        #       value = "FRP-Healthcheck";
+        #     }
+        #     {
+        #       name = "x-from-where";
+        #       value = "frp";
+        #     }
+        #   ];
+        # };
+      }
+    ];
 
     services.postgresql = {
       ensureDatabases = [

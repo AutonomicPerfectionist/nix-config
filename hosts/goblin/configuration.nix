@@ -165,6 +165,9 @@
       };
       matrix = {
         enable = true;
+        hostname = "matrix.beensoup.net";
+        internalHTTPPort = 8083;
+
       };
     };
   };

@@ -202,7 +202,7 @@
       # httpPassword = "admin";
       # if domain for frps is frps.com, then you can access [web01] proxy by URL http://web01.frps.com
       # subdomain = "nextcloud";
-      customDomains = [ "nc.beensoup.net" ];
+      customDomains = [ "nc.bsoup.net" ];
       # locations is only available for http type
       # locations = ["/", "/pic"]
       # route requests to this service if http basic auto user is abc

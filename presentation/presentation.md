@@ -424,14 +424,14 @@ goblin-frpc = {
 			extraApps = with pkgs.nextcloud32Packages.apps; {
 				inherit calendar contacts cookbook;
 			};
-			hostname = "nc.beensoup.net";
+			hostname = "nc.bsoup.net";
 			datadir = "/run/media/spinning-rust/nextcloud-data";
 			dbPassFile = config.age.secrets.nextcloud-pg-pass.path;
 			internalHTTPPort = 8081;
 		};
 		foundry = {
 			enable = true;
-			hostname = "foundry.beensoup.net";
+			hostname = "foundry.bsoup.net";
 			volumePath = "/var/foundryvtt";
 			envFile = config.age.secrets.foundry-env.path;
 			internalHTTPPort = 8082;

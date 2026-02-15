@@ -90,7 +90,7 @@ in
     # Override the nextcloud service's nginx entry so it listens on our custom port.
     services.nginx = {
       enable = true;
-      virtualHosts."nc.beensoup.net" = {
+      virtualHosts."nc.bsoup.net" = {
         listen = [
           {
             addr = "127.0.0.1";

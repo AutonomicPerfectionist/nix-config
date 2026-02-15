@@ -156,21 +156,21 @@
         extraApps = with pkgs.nextcloud32Packages.apps; {
           inherit calendar contacts cookbook;
         };
-        hostname = "nc.beensoup.net";
+        hostname = "nc.bsoup.net";
         datadir = "/run/media/spinning-rust/nextcloud-data";
         dbPassFile = config.age.secrets.nextcloud-pg-pass.path;
         internalHTTPPort = 8081;
       };
       foundry = {
         enable = true;
-        hostname = "foundry.beensoup.net";
+        hostname = "foundry.bsoup.net";
         volumePath = "/var/foundryvtt";
         envFile = config.age.secrets.foundry-env.path;
         internalHTTPPort = 8082;
       };
       matrix = {
         enable = true;
-        hostname = "matrix.beensoup.net";
+        hostname = "matrix.bsoup.net";
         internalHTTPPort = 8083;
         passFile = config.age.secrets.matrix-pass.path;
       };
@@ -182,7 +182,7 @@
   #   dbBackend = "sqlite";
   #   config = {
   #     # Config reference at https://github.com/dani-garcia/vaultwarden/blob/1.33.2/.env.template
-  #     DOMAIN = "https://vault.beensoup.net";
+  #     DOMAIN = "https://vault.bsoup.net";
   #     SIGNUPS_ALLOWED = false;
   #   };
   # };

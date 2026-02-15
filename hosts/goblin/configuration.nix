@@ -135,6 +135,11 @@
     file = ../../secrets/foundry-env.age;
   };
 
+  age.secrets.matrix-pass = {
+    file = ../../secrets/matrix-pass.age;
+    owner = "matrix-synapse";
+  };
+
   # Custom FRP Services
   goblin-frpc = {
     enable = true;
@@ -167,7 +172,7 @@
         enable = true;
         hostname = "matrix.beensoup.net";
         internalHTTPPort = 8083;
-
+        passFile = config.age.secrets.matrix-pass.path
       };
     };
   };

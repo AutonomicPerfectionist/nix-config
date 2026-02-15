@@ -30,20 +30,10 @@ in
 
   options.goblin-frpc.services.matrix = {
     enable = lib.mkEnableOption "Enable the matrix service";
-    package = mkOption {
-      type = types.package;
-    };
-    extraApps = mkOption {
-      type = types.attrs;
-      default = { };
-    };
     hostname = mkOption {
       type = types.str;
     };
-    datadir = mkOption {
-      type = types.str;
-    };
-    dbPassFile = mkOption {
+    passFile = mkOption {
       type = types.str;
     };
     internalHTTPPort = mkOption {
@@ -53,7 +43,7 @@ in
 
   config =
     let
-      baseUrl = "https://${cfg.hostname}";
+      baseUrl = "https://${cfg.hostname}/";
     in
     lib.mkIf cfg.enable {
       # assertions = [
@@ -73,6 +63,10 @@ in
       #     "internalHTTPPort"
       #   ];
       # });
+
+      environment.systemPackages = with pkgs; [
+        matrix-synapse
+      ];
 
       services.matrix-synapse = {
         enable = true;
@@ -96,6 +90,7 @@ in
             ];
           }
         ];
+        extraConfigFiles = [ cfg.passFile ];
       };
 
       # Override the nextcloud service's nginx entry so it listens on our custom port.
@@ -171,15 +166,12 @@ in
 
       services.postgresql = {
         ensureDatabases = [
-          # "matrix-synapse"
+          "matrix-synapse"
         ];
         ensureUsers = [
           {
             name = "matrix-synapse";
             ensureDBOwnership = true;
-            ensureStmt = {
-
-            };
           }
         ];
       };

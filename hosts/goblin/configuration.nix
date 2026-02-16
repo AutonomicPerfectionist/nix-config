@@ -170,9 +170,14 @@
       };
       matrix = {
         enable = true;
-        hostname = "matrix.bsoup.net";
+        hostname = "m.bsoup.net";
         internalHTTPPort = 8083;
         passFile = config.age.secrets.matrix-pass.path;
+      };
+      rocketchat = {
+        enable = true;
+        hostname = "rc.bsoup.net";
+        internahHTTPPort = 8084;
       };
     };
   };

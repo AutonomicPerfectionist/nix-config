@@ -119,6 +119,8 @@
     curl
     git
     btop
+    signal-desktop
+    discord
 
     # gui apps
     qbittorrent

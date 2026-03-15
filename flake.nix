@@ -25,6 +25,8 @@
 
     # Custom hardware tweaks
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
+
+    nixos-cli.url = "github:nix-community/nixos-cli";
   };
   outputs =
     # collects all inputs into `inputs` attrset
@@ -83,6 +85,14 @@
           system = "x86_64-linux";
           modules = [
             ./hosts/lucy/configuration.nix
+            inputs.agenix.nixosModules.default
+          ];
+        };
+
+        big-nix = mkConfiguration {
+          system = "x86_64-linux";
+          modules = [
+            ./hosts/big-nix/configuration.nix
             inputs.agenix.nixosModules.default
           ];
         };

@@ -1,14 +1,13 @@
 {
   config,
   pkgs,
-  flake-inputs,
-  userConfiguration,
   ...
 }:
 {
   imports = [
     
   ];
+
   # Home Manager needs a bit of information about you and the
   # paths it should manage.
   home.username = "branden";
@@ -28,10 +27,39 @@
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
 
+  # use-xdg-base-directories = true;
+
   programs.bash.enable = true;
   home.sessionVariables = {
     EDITOR = "micro";
   };
+
+  
+  home.packages = with pkgs; [
+    bat
+    eza
+    nerd-fonts.comic-shanns-mono
+    nerd-fonts.meslo-lg
+    nerd-fonts.fira-code
+    ansible
+    python314Packages.clustershell
+    nix-ld
+    devenv
+    # vscodium
+    # vscode
+    # zed-editor
+    # neovim
+    # flatpak
+    # obsidian
+    # vlc
+    # kitty
+    # spotify
+    # gimp
+    # asdf-vm
+  ];
+
+  
+  fonts.fontconfig.enable = true;
 
   
   home.file.".config/nixpkgs/config.nix".text = ''
@@ -39,6 +67,12 @@
     		allowUnfree = true;
     	}
     	'';
+
+	xdg.enable = true;
+	xdg.configFile."clustershell/config.d/sudo.conf".source = ./config/clustersh/sudo.conf;
+	xdg.configFile."clustershell/groups.d/groups.yaml".source = ./config/clustersh/groups.yaml;
+	xdg.configFile."clustershell/clush.conf".source = ./config/clustersh/clush.conf;
+	xdg.configFile."clustershell/groups.conf".source = ./config/clustersh/groups.conf;
 
   # Git config
   # Delta is a prettier diff tool with good git integration
@@ -122,7 +156,7 @@
     };
 
     shellAliases = {
-      nixswitch = ("nh os switch ~/nixos#" + userConfiguration.hostname);
+      #nixswitch = ("nh os switch ~/nixos#" + userConfiguration.hostname);
       ls = "eza --git -F --icons --hyperlink -g";
       lsa = "ls -alh";
     };

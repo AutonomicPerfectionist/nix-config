@@ -35,27 +35,9 @@ in
         "docker"
       ];
       shell = pkgs.zsh;
-      packages = with pkgs; [
-        bat
-        eza
-        # vscodium
-        # vscode
-        # zed-editor
-        # neovim
-        # flatpak
-        # obsidian
-        # vlc
-        # kitty
-        # spotify
-        # gimp
-        # asdf-vm
-      ];
+
     };
-    fonts.packages = with pkgs; [
-      nerd-fonts.comic-shanns-mono
-      nerd-fonts.meslo-lg
-      nerd-fonts.fira-code
-    ];
+    
 
     # TODO these programs.* options are pretty scattered,
     # should reorganize

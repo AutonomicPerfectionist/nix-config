@@ -1,0 +1,40 @@
+# ClusterShell groups config cluster.yaml.example
+#
+# Example of YAML groups config file with multiple sources.
+# ^^^^^^^
+# Here you can describe your cluster nodes and equipments using several
+# group sources.
+#
+# Example of group source use-cases are:
+# - functional info (compute, storage, service nodes, etc.)
+# - location (room, rack position, etc.)
+# - physical attributes (cpu type, gpu types, memory size, etc.)
+# - vendors and hardware models, useful info for firmware update
+# - infrastructure (pdu, network and interco switches)
+# - ownership of nodes and partitions...
+#
+# File will be auto-loaded if renamed to .yaml
+#
+# Break and adapt to fit your own needs. Use nodeset CLI to test config.
+
+# Group source roles:
+# define groups @roles:adm, @roles:io, etc.
+roles:
+    adm: 'proxbox-0'
+    storage: 'cheapskate'
+    compute: '@racks:thunder-budget,@racks:fatman'
+    gpu: '@racks:fatman'
+
+# Group source racks:
+# define groups @racks:rack[1-4], @racks:old and @racks:new
+racks:
+    thunder-budget: 'thunder-budget-[1-4]'
+    fatman: 'fatman-[1-4]'
+
+
+# Group source cpu:
+# define groups @cpu:ivy, @cpu:hsw and @cpu:all
+cpu:
+    ivy: '@racks:thunder-budget'
+    # groups from other sources must be prefixed with "source:"
+    hsw: '@roles:compute!@ivy'

@@ -27,6 +27,10 @@
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
 
     nixos-cli.url = "github:nix-community/nixos-cli";
+
+    disko.url = "github:nix-community/disko";
+    disko.inputs.nixpkgs.follows = "nixpkgs";
+    nixos-facter-modules.url = "github:numtide/nixos-facter-modules";
   };
   outputs =
     # collects all inputs into `inputs` attrset
@@ -93,6 +97,22 @@
           system = "x86_64-linux";
           modules = [
             ./hosts/big-nix/configuration.nix
+            inputs.agenix.nixosModules.default
+          ];
+        };
+
+        thunder-budget-3 = mkConfiguration {
+          system = "x86_64-linux";
+          modules = [
+            ./hosts/thunder-budget/thunder-budget-3/configuration.nix
+            inputs.agenix.nixosModules.default
+          ];
+        };
+
+        thunder-budget-4 = mkConfiguration {
+          system = "x86_64-linux";
+          modules = [
+            ./hosts/thunder-budget/thunder-budget-4/configuration.nix
             inputs.agenix.nixosModules.default
           ];
         };

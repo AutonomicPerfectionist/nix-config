@@ -43,6 +43,7 @@ in
     # should reorganize
     programs.zsh.enable = true;
     programs.nix-ld.enable = true; # Needed for foreign dylib programs
+        
     home-manager = {
       users.branden = ./home/home.nix;
       extraSpecialArgs = {

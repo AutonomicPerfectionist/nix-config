@@ -8,6 +8,12 @@
   boot.supportedFilesystems = [ "nfs" ];
   services.rpcbind.enable = true; # needed for NFS
 
+  boot.swraid.enable = true;
+
+  environment.systemPackages = with pkgs; [
+  	parted
+  ];
+
   fileSystems."/mnt/cluster" = {
     device = "cheapskate.local:/mnt/cluster";
     fsType = "nfs";

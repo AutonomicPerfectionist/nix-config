@@ -37,6 +37,7 @@
   
   home.packages = with pkgs; [
     bat
+    comma
     eza
     nerd-fonts.comic-shanns-mono
     nerd-fonts.meslo-lg
@@ -166,5 +167,23 @@
       "--help" = "--help 2>&1 | bat --language=help --style=plain";
     };
   };
+
+  
+  programs.micro.enable = true;
+  programs.micro.settings = {
+    diffgutter = true;
+    keymenu = true;
+    mkparents = true;
+    savecursor = true;
+    clipboard = "external";
+    colorscheme = "dukedark-tc";
+  };
+
+  programs.less.enable = true;
+  programs.less.options = {
+      RAW-CONTROL-CHARS = true;
+      # quiet = true;
+      wheel-lines = 3;
+    };
 
 }

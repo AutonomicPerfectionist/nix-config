@@ -11,23 +11,16 @@
 
 {
   imports = [
-    # Include the results of the hardware scan.
-    ./hardware-configuration.nix
     ../../modules/nix-settings.nix
     ../../modules/cluster/mounts.nix
     ../../modules/cluster/management.nix
-    ../../hardware/gpus/gpus.nix
+
     flake-inputs.home-manager.nixosModules.default
 
     # Users
     ../../users/branden
 
   ];
-
-  userconfig.branden = {
-    enable = true;
-    hostname = "big-nix";
-  };
 
   home-manager = {
     extraSpecialArgs = { inherit flake-inputs; };
@@ -39,18 +32,9 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  # Kernel 6.12 has patches for nvidia driver 390,
-  # newer kernels don't
+  # Kernel 6.12 has the ib_qib module needed for the infiniband cards
   boot.kernelPackages = pkgs.linuxPackages_6_12;
 
-  # Additional hardware and driver configuration
-  hardware.graphics.enable = true;
-  hardware.gpu.nvidia.enable = true;
-  hardware.gpu.nvidia.cards = [
-    "quadro_m6000"
-  ];
-
-  networking.hostName = "big-nix"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
   # Configure network proxy if necessary
@@ -60,6 +44,7 @@
   # Enable networking
   networking.networkmanager.enable = true;
   networking.firewall.enable = false;
+  hardware.infiniband.enable = true;
 
   # Set your time zone.
   time.timeZone = "America/Chicago";
@@ -122,9 +107,6 @@
 
   # Enable the OpenSSH daemon.
   services.openssh.enable = true;
-  services.openssh.settings = {
-    X11Forwarding = true;
-  };
 
   # Open ports in the firewall.
   # networking.firewall.allowedTCPPorts = [ ... ];

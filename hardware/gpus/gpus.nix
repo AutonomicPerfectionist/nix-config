@@ -14,4 +14,9 @@
     enable32Bit = true;
   };
 
+  environment.systemPackages = with pkgs; [
+    # Add any additional GPU tools
+    nvtopPackages.full
+  ];
+
 }

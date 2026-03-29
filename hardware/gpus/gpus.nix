@@ -7,6 +7,7 @@
 {
   imports = [
     ./nvidia.nix
+    ./amd.nix
   ];
 
   hardware.graphics = {

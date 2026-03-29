@@ -14,8 +14,10 @@
     # Include the results of the hardware scan.
     ./hardware-configuration.nix
     ../../modules/nix-settings.nix
+    ../../modules/avahi.nix
     ../../modules/cluster/mounts.nix
     ../../modules/cluster/management.nix
+    ../../modules/cluster/distributed.nix
     ../../hardware/gpus/gpus.nix
     flake-inputs.home-manager.nixosModules.default
 
@@ -83,17 +85,6 @@
   services.xserver.xkb = {
     layout = "us";
     variant = "";
-  };
-
-  services.avahi = {
-    enable = true;
-    nssmdns = true;
-    openFirewall = true;
-    publish = {
-      enable = true;
-      userServices = true;
-      addresses = true;
-    };
   };
 
   # Allow unfree packages

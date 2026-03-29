@@ -14,6 +14,7 @@
     ../../modules/nix-settings.nix
     ../../modules/cluster/mounts.nix
     ../../modules/cluster/management.nix
+    ../../modules/cluster/distributed.nix
 
     flake-inputs.home-manager.nixosModules.default
 

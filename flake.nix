@@ -117,6 +117,24 @@
           ];
         };
 
+        arid-wind = mkConfiguration {
+          system = "x86_64-linux";
+          modules = [
+            ./hosts/arid-wind/configuration.nix
+            inputs.disko.nixosModules.disko
+            inputs.agenix.nixosModules.default
+          ];
+        };
+
+        fatman-3 = mkConfiguration {
+           system = "x86_64-linux";
+           modules = [
+             ./hosts/fatman/fatman-3/configuration.nix
+             inputs.disko.nixosModules.disko
+             inputs.agenix.nixosModules.default
+           ];
+         };
+
         # more configs here
         # my-hostname = mkConfiguration {
         #   system = "x86_64-linux";

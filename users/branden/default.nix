@@ -43,7 +43,7 @@ in
     # should reorganize
     programs.zsh.enable = true;
     programs.nix-ld.enable = true; # Needed for foreign dylib programs
-        
+    environment.pathsToLink = [ "/share/zsh" ];        
     home-manager = {
       users.branden = ./home/home.nix;
       extraSpecialArgs = {

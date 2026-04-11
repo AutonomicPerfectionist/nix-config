@@ -137,6 +137,7 @@
 
   programs.zsh = {
     enable = true;
+    enableVteIntegration = true;
 
     syntaxHighlighting.enable = true;
     autosuggestion.enable = true;
@@ -168,6 +169,48 @@
     };
   };
 
+  # Carapace is a better tab-completion manager
+  programs.carapace.enable = true;
+  programs.carapace.enableZshIntegration = true;
+
+
+  # intelli-shell allows to auto-fix commands (ctrl+x) or look for/create snippets (ctrl+space)
+  # TODO: Add API key age file
+  programs.intelli-shell = {
+    enable = true;
+    enableZshIntegration = true;
+    settings = {
+      ai = {
+        enabled = true;
+        models = {
+          suggest = "main";
+          # The alias of the model used to fix or explain a failing command
+          fix = "main";
+          # The alias of the model to use when importing commands
+          "import" = "main";
+          # The alias of the model to use when generating a command for a dynamic variable completion
+          completion = "main";
+          # The alias of a model to use as a fallback if the primary model fails due to rate limits
+          fallback = "fallback";
+        };
+        catalog = {
+          main = {
+            provider = "openai";
+            url = "https://openrouter.ai/api/v1";
+            model = "nvidia/nemotron-3-super-120b-a12b:free";
+            api_key_env = "OPENROUTER_API_KEY";
+          };
+          falback = {
+            provider = "openai";
+            url = "https://openrouter.ai/api/v1";
+            model = "nvidia/nemotron-3-nano-30b-a3b:free";
+            api_key_env = "OPENROUTER_API_KEY";
+          };
+        };
+      };
+    };
+  };
+  
   
   programs.micro.enable = true;
   programs.micro.settings = {

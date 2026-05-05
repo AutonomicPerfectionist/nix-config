@@ -173,6 +173,7 @@
   programs.carapace.enable = true;
   programs.carapace.enableZshIntegration = true;
 
+  programs.opencode.enable = true;
 
   # intelli-shell allows to auto-fix commands (ctrl+x) or look for/create snippets (ctrl+space)
   # TODO: Add API key age file

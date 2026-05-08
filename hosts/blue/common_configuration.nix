@@ -11,34 +11,17 @@
 
 {
   imports = [
-    # Include the results of the hardware scan.
-    ./hardware-configuration.nix
     ../../modules/nix-settings.nix
     ../../modules/cluster/mounts.nix
     ../../modules/cluster/management.nix
     ../../modules/cluster/distributed.nix
-    ../../modules/avahi.nix
     ../../hardware/gpus/gpus.nix
-    # ../../containers/pytorch-rocm.nix
-    ./disk-config.nix
     flake-inputs.home-manager.nixosModules.default
 
     # Users
     ../../users/branden
 
   ];
-
-  userconfig.branden = {
-    enable = true;
-    hostname = "arid-wind";
-  };
-
-  users.users.root.openssh.authorizedKeys.keys =
-   		[
-  		  "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB6ErD21kz5qWhGQLJSKO9qlKnH44LU0yS4rAd8+OQkC branden@big-nix"
-  		  "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC3TrJ+kvtwroS872kcwJBUemgafuQYz2chtStIN08LzCpipDpo+A0aIjvafK83shztlhcqgQwza/4TkhJGBYvikEegTkqG4T8QPjbvL5RQEuNfL8Mbd9UgYKIkb91sF6VHIBujNCSs0D48C16LUyLFYzcQhLETi1DpG3K4t9HSncH5YLrITlW6l0VYUHllo86sW7pSGgTyhHrI09zskxIGE0lVbScOBh5+eHXphcAlEz07rp50feQjWZKwyCYraG31pk9esXhIJ0qAz4znBCcszteUUra9b1nJucWlTRUh3prqkYRJx0gyS7ClclhV6IofbplNKwxow2tl82C1xg88MUzd+sH9tSbslZVpnibeiW9YTBs9j+KbDohkJ5/hTcf1yceswfPVk9uWNMg5J+vQSszZNfKgrnNTTp8BUVPLh2oNKO9TqPmBqpDBeQtuBDOzD9RnfM0sCSOD9TDw4zw2yPPqRTMG3eznfQ9z8hXbLhY35lV/ZI4FpZbqHSk1/+8= branden@trash-can"
-  		  "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC5fdkXww9okIJ/3leprxCkUaoQtwjI8hppcGnihFwscXiYcht0p5UhFq1S4byTl/HdlhHrRX+qnmlFe2Y7eE9As/6BpyYgBkbaZ3e2cdgZ7DUmh9P2o3N9bTImSvLA0UWDy7OzJ5MbYV1VQPhJlJXW/vcpD6MBOBAeFrRIJuB1DQq7tS66tKgAC8JN8ABV6jk9ioc+OVZLyatvcF28QBrFgoErKFwlVXx3VJro2LVD8wvhiddnx/05pv5P4FkmYTyDT7IDcJijMui5MOCQ7nDjtpH602oUQum8E6+mCDGPN51D1Up5vvN+5HbuH0wuzvWW0l3kunJaeGmNpxrn4py0lWOOmA09HYEfbidjZjpXIAA3evPuWPZmwcFRNF9rciuSDx0OW3xwHs0lav64j3nEM8ib9nhoUu1Iz3GssSyMrW8/Fh1KX2r6ISTWU5tjbcqKK2fIS7wTDWOLf7Is90AHIaBeLULQ5EZzraNSIcxDT+ITIQ10RY4iuzm/sZCJmKc= branden@ryzen-desktop"
-  		];
 
   home-manager = {
     extraSpecialArgs = { inherit flake-inputs; };
@@ -50,23 +33,13 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
+  # Kernel 6.12 has the ib_qib module needed for the infiniband cards
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
-  swapDevices = [{
-    device = "/swapfile";
-    size = 16 * 1024; # 16GB
-  }];
 
   # Additional hardware and driver configuration
   hardware.graphics.enable = true;
-  hardware.gpu.amd.enable = true;
-
-  # Container configuration
-  virtualisation.podman.enable = true;
-  virtualisation.oci-containers.backend = "podman";
-  # pytorchRocm.use_hsa_override = true; # Enable HSA override for ROCm compatibility
-
-  networking.hostName = "arid-wind"; # Define your hostname.
+  hardware.gpu.intel.enable = true;
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
   # Configure network proxy if necessary
@@ -76,6 +49,7 @@
   # Enable networking
   networking.networkmanager.enable = true;
   networking.firewall.enable = false;
+  # hardware.infiniband.enable = true;
 
   # Set your time zone.
   time.timeZone = "America/Chicago";
@@ -101,6 +75,17 @@
     variant = "";
   };
 
+  services.avahi = {
+    enable = true;
+    nssmdns = true;
+    openFirewall = true;
+    publish = {
+      enable = true;
+      userServices = true;
+      addresses = true;
+    };
+  };
+
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
 
@@ -113,7 +98,7 @@
     micro
     htop
     xclip
-    llama-cpp-rocm
+    llama-cpp-sycl
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
@@ -128,9 +113,6 @@
 
   # Enable the OpenSSH daemon.
   services.openssh.enable = true;
-  services.openssh.settings = {
-    X11Forwarding = true;
-  };
 
   # Open ports in the firewall.
   # networking.firewall.allowedTCPPorts = [ ... ];

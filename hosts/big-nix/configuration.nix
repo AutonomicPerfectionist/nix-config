@@ -19,6 +19,7 @@
     flake-inputs.home-manager.nixosModules.default
 
     # Users
+    ../../modules/ml/llama.nix
     ../../users/branden
   ];
 

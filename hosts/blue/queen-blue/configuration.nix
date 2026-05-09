@@ -6,7 +6,8 @@
   ...
 }:
 {
-  imports = [
+    imports = [
+      ../../modules/ml/llama.nix
     ./hardware-configuration.nix
     ./disk-config.nix
     ../common_configuration.nix

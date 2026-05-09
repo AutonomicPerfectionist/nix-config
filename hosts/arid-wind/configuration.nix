@@ -11,6 +11,7 @@
     ./hardware-configuration.nix
     ../../modules/nix-settings.nix
     ../../modules/compute.nix
+    ../../modules/ml/llama.nix
     ../../modules/cluster/mounts.nix
     ../../modules/cluster/management.nix
     ../../modules/cluster/distributed.nix

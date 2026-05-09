@@ -53,42 +53,6 @@
           };
         };
 
-      # Ensure a single consistent Intel userspace stack across the system closure.
-      # This does NOT modify kernel drivers, only Nixpkgs-level packages.
-      intelOverlay = final: prev: {
-        inherit (prev)
-          level-zero
-          intel-compute-runtime
-          intel-graphics-compiler
-          ;
-      };
-
-      # Ensure SYCL packages (notably llama-cpp-sycl) are built against the same pkgs set,
-      # so they share Level Zero and compute runtime ABI.
-      syclOverlay = final: prev: {
-        llama-cpp-sycl = inputs.sycl.packages.${prev.system}.llama-cpp-sycl.overrideAttrs (old: {
-
-          cmakeFlags = (old.cmakeFlags or [ ]) ++ [
-            "-DGGML_RPC=ON"
-          ];
-
-          nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ prev.addDriverRunpath ];
-
-          buildInputs = (old.buildInputs or [ ]) ++ [
-            prev.level-zero
-            prev.intel-compute-runtime
-          ];
-
-          postFixup = (old.postFixup or "") + ''
-            for bin in $out/bin/*; do
-              if [ -x "$bin" ] && file "$bin" | grep -q ELF; then
-                addDriverRunpath "$bin"
-              fi
-            done
-          '';
-        });
-      };
-
     in
     {
       nixosConfigurations = {
@@ -98,17 +62,6 @@
           modules = [
             ./hosts/hypergamma/configuration.nix
             inputs.agenix.nixosModules.default
-
-            # Global pkgs consistency for SYCL + Intel stack
-            (
-              { ... }:
-              {
-                nixpkgs.overlays = [
-                  intelOverlay
-                  syclOverlay
-                ];
-              }
-            )
           ];
         };
 
@@ -117,16 +70,6 @@
           modules = [
             ./hosts/goblin/configuration.nix
             inputs.agenix.nixosModules.default
-
-            (
-              { ... }:
-              {
-                nixpkgs.overlays = [
-                  intelOverlay
-                  syclOverlay
-                ];
-              }
-            )
           ];
         };
 
@@ -135,16 +78,6 @@
           modules = [
             ./hosts/aj-framework/configuration.nix
             inputs.nixos-hardware.nixosModules.framework-12th-gen-intel
-
-            (
-              { ... }:
-              {
-                nixpkgs.overlays = [
-                  intelOverlay
-                  syclOverlay
-                ];
-              }
-            )
           ];
         };
 
@@ -153,16 +86,6 @@
           modules = [
             ./hosts/lucy/configuration.nix
             inputs.agenix.nixosModules.default
-
-            (
-              { ... }:
-              {
-                nixpkgs.overlays = [
-                  intelOverlay
-                  syclOverlay
-                ];
-              }
-            )
           ];
         };
 
@@ -171,16 +94,6 @@
           modules = [
             ./hosts/big-nix/configuration.nix
             inputs.agenix.nixosModules.default
-
-            (
-              { ... }:
-              {
-                nixpkgs.overlays = [
-                  intelOverlay
-                  syclOverlay
-                ];
-              }
-            )
           ];
         };
 
@@ -189,16 +102,6 @@
           modules = [
             ./hosts/thunder-budget/thunder-budget-3/configuration.nix
             inputs.agenix.nixosModules.default
-
-            (
-              { ... }:
-              {
-                nixpkgs.overlays = [
-                  intelOverlay
-                  syclOverlay
-                ];
-              }
-            )
           ];
         };
 
@@ -207,16 +110,6 @@
           modules = [
             ./hosts/thunder-budget/thunder-budget-4/configuration.nix
             inputs.agenix.nixosModules.default
-
-            (
-              { ... }:
-              {
-                nixpkgs.overlays = [
-                  intelOverlay
-                  syclOverlay
-                ];
-              }
-            )
           ];
         };
 
@@ -226,21 +119,6 @@
             ./hosts/arid-wind/configuration.nix
             inputs.disko.nixosModules.disko
             inputs.agenix.nixosModules.default
-            (
-              { ... }:
-              {
-                nixpkgs.overlays = [
-                  (final: prev: {
-                    llama-cpp-rocm = prev.llama-cpp-rocm.overrideAttrs (old: {
-                      cmakeFlags = (old.cmakeFlags or [ ]) ++ [
-                        "-DGGML_RPC=ON"
-                      ];
-                    });
-                  })
-                ];
-              }
-            )
-
           ];
         };
 
@@ -250,16 +128,6 @@
             ./hosts/fatman/fatman-3/configuration.nix
             inputs.disko.nixosModules.disko
             inputs.agenix.nixosModules.default
-
-            (
-              { ... }:
-              {
-                nixpkgs.overlays = [
-                  intelOverlay
-                  syclOverlay
-                ];
-              }
-            )
           ];
         };
 
@@ -269,17 +137,6 @@
             ./hosts/blue/king-blue/configuration.nix
             inputs.disko.nixosModules.disko
             inputs.agenix.nixosModules.default
-
-            # Required for SYCL + Intel stack coherence in system closure
-            (
-              { ... }:
-              {
-                nixpkgs.overlays = [
-                  intelOverlay
-                  syclOverlay
-                ];
-              }
-            )
           ];
         };
 
@@ -289,16 +146,6 @@
             ./hosts/blue/queen-blue/configuration.nix
             inputs.disko.nixosModules.disko
             inputs.agenix.nixosModules.default
-
-            (
-              { ... }:
-              {
-                nixpkgs.overlays = [
-                  intelOverlay
-                  syclOverlay
-                ];
-              }
-            )
           ];
         };
       };

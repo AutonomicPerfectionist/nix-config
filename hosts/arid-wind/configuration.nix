@@ -1,14 +1,10 @@
-# Edit this configuration file to define what should be installed on
-# your system.  Help is available in the configuration.nix(5) man page
-# and in the NixOS manual (accessible by running ‘nixos-help’).
-
 {
+  # Arid-wind - Cluster compute node with AMD GPU
   config,
   pkgs,
   flake-inputs,
   ...
 }:
-
 {
   imports = [
     # Include the results of the hardware scan.
@@ -19,13 +15,11 @@
     ../../modules/cluster/distributed.nix
     ../../modules/avahi.nix
     ../../hardware/gpus/gpus.nix
-    # ../../containers/pytorch-rocm.nix
     ./disk-config.nix
     flake-inputs.home-manager.nixosModules.default
 
     # Users
     ../../users/branden
-
   ];
 
   userconfig.branden = {
@@ -65,9 +59,8 @@
   # Container configuration
   virtualisation.podman.enable = true;
   virtualisation.oci-containers.backend = "podman";
-  # pytorchRocm.use_hsa_override = true; # Enable HSA override for ROCm compatibility
 
-  networking.hostName = "arid-wind"; # Define your hostname.
+  networking.hostName = "arid-wind";
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
   # Configure network proxy if necessary
@@ -141,7 +134,7 @@
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
-  # on your system were taken. It‘s perfectly fine and recommended to leave
+  # on your system were taken. It's perfectly fine and recommended to leave
   # this value at the release version of the first install of this system.
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).

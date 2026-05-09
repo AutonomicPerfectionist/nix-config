@@ -1,33 +1,92 @@
-# Edit this configuration file to define what should be installed on
-# your system.  Help is available in the configuration.nix(5) man page
-# and in the NixOS manual (accessible by running ‘nixos-help’).
-
 {
+  # Queen-blue - Cluster compute node with Intel Arc GPU
+  # Note: SYCL overlay enabled for llama-cpp-sycl
   config,
   pkgs,
   flake-inputs,
   ...
 }:
-
 {
   imports = [
-    # Include the results of the hardware scan.
     ./hardware-configuration.nix
     ./disk-config.nix
-    ../common_configuration.nix
     flake-inputs.home-manager.nixosModules.default
+    ../../modules/nix-settings.nix
+    # NFS cluster mounts
+    ../../modules/cluster/mounts.nix
+    ../../modules/cluster/management.nix
+    ../../modules/cluster/distributed.nix
+    # GPU drivers
+    ../../hardware/gpus/gpus.nix
+    ../../modules/common/overlays.nix
+    ../../modules/common/base.nix
+    ../../users/branden
   ];
+
+  # Enable SYCL + Intel Arc overlay stack for compute workloads
+  scl.overlays.sycl-intel = true;
 
   userconfig.branden = {
     enable = true;
     hostname = "queen-blue";
   };
 
-  networking.hostName = "queen-blue"; # Define your hostname.
-  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
+  home-manager = {
+    extraSpecialArgs = { inherit flake-inputs; };
+    useGlobalPkgs = true;
+    useUserPackages = true;
+  };
 
-  # Configure network proxy if necessary
-  # networking.proxy.default = "http://user:password@proxy:port/";
-  # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
 
+  boot.kernelPackages = pkgs.linuxPackages_latest;
+
+  hardware.graphics.enable = true;
+  hardware.gpu.intel.enable = true;
+
+  networking.hostName = "queen-blue";
+  networking.networkmanager.enable = true;
+  networking.firewall.enable = false;
+
+  time.timeZone = "America/Chicago";
+
+  i18n.defaultLocale = "en_US.UTF-8";
+
+  i18n.extraLocaleSettings = {
+    LC_ADDRESS = "en_US.UTF-8";
+    LC_IDENTIFICATION = "en_US.UTF-8";
+    LC_MEASUREMENT = "en_US.UTF-8";
+    LC_MONETARY = "en_US.UTF-8";
+    LC_NAME = "en_US.UTF-8";
+    LC_NUMERIC = "en_US.UTF-8";
+    LC_PAPER = "en_US.UTF-8";
+    LC_TELEPHONE = "en_US.UTF-8";
+    LC_TIME = "en_US.UTF-8";
+  };
+
+  services.avahi = {
+    enable = true;
+    nssmdns = true;
+    openFirewall = true;
+    publish = {
+      enable = true;
+      userServices = true;
+      addresses = true;
+    };
+  };
+
+  nixpkgs.config.allowUnfree = true;
+
+  environment.systemPackages = with pkgs; [
+    git
+    micro
+    htop
+    xclip
+    llama-cpp-sycl
+  ];
+
+  services.openssh.enable = true;
+
+  system.stateVersion = "25.11";
 }

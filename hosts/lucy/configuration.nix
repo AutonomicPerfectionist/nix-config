@@ -1,8 +1,5 @@
-# Edit this configuration file to define what should be installed on
-# your system.  Help is available in the configuration.nix(5) man page
-# and in the NixOS manual (accessible by running ‘nixos-help’).
-
 {
+  # Lucy - Minimal Gnome desktop
   config,
   pkgs,
   flake-inputs,
@@ -43,7 +40,7 @@
   # set kernel version
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
-  networking.hostName = "lucy"; # Define your hostname.
+  networking.hostName = "lucy";
 
   # Enable networking
   networking.networkmanager.enable = true;
@@ -65,20 +62,6 @@
     LC_TELEPHONE = "en_US.UTF-8";
     LC_TIME = "en_US.UTF-8";
   };
-
-  # undervolt
-  # services.undervolt = {
-  #   enable = true;
-  #   coreOffset = -52;
-  #   p1 = {
-  #     limit = 85;
-  #     window = 28;
-  #   };
-  #   p2 = {
-  #     limit = 160;
-  #     window = 0.004;
-  #   };
-  # };
 
   # Enable the X11 windowing system.
   services.xserver.enable = true;
@@ -127,5 +110,5 @@
     filezilla
   ];
 
-  system.stateVersion = "23.11"; # NO TOUCH
+  system.stateVersion = "23.11";
 }

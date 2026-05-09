@@ -1,8 +1,5 @@
-# Edit this configuration file to define what should be installed on
-# your system.  Help is available in the configuration.nix(5) man page
-# and in the NixOS manual (accessible by running ‘nixos-help’).
-
 {
+  # Goblin - Server with XFCE desktop and frpc tunneling services
   config,
   pkgs,
   lib,
@@ -26,6 +23,7 @@
     ./frpc/services/nextcloud.nix
     ./frpc/services/foundry.nix
     ./frpc/services/matrix.nix
+    ./frpc/services/rocketchat.nix
   ];
 
   userconfig.b = {
@@ -37,7 +35,7 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  networking.hostName = "goblin"; # Define your hostname.
+  networking.hostName = "goblin";
 
   # Enable networking
   networking.networkmanager.enable = true;
@@ -177,7 +175,7 @@
       rocketchat = {
         enable = true;
         hostname = "rc.bsoup.net";
-        internahHTTPPort = 8084;
+        internalHTTPPort = 8084;
       };
     };
   };

@@ -1,20 +1,15 @@
-# Edit this configuration file to define what should be installed on
-# your system.  Help is available in the configuration.nix(5) man page
-# and in the NixOS manual (accessible by running ‘nixos-help’).
-
 {
+  # Thunder-budget-4 - Cluster compute node with InfiniBand
   config,
   pkgs,
   flake-inputs,
   ...
 }:
-
 {
   imports = [
     # Include the results of the hardware scan.
     ./hardware-configuration.nix
     ../common_configuration.nix
-
   ];
 
   userconfig.branden = {
@@ -22,7 +17,8 @@
     hostname = "thunder-budget-4";
   };
 
-  networking.hostName = "thunder-budget-4"; # Define your hostname.
+  networking.hostName = "thunder-budget-4";
+
   hardware.infiniband.guids = [
     "0x00117500006f66ce"
   ];
@@ -30,6 +26,7 @@
   boot.kernelModules = [
     "ib_ipoib"
   ];
+
   networking.interfaces = {
     ibs1 = {
       ipv4.addresses = [
@@ -40,9 +37,9 @@
       ];
       mtu = 65520;
       useDHCP = false;
-
     };
   };
+
   networking.localCommands = ''
     echo connected > /sys/class/net/ibs1/mode
   '';

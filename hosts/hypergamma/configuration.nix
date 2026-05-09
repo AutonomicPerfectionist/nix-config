@@ -1,8 +1,5 @@
-# Edit this configuration file to define what should be installed on
-# your system.  Help is available in the configuration.nix(5) man page
-# and in the NixOS manual (accessible by running ‘nixos-help’).
-
 {
+  # Hypergamma - Desktop workstation with AMD GPU, multiple DE support
   config,
   pkgs,
   pkgs-stable,
@@ -69,7 +66,7 @@ in
     SUBSYSTEM=="usbmon", GROUP="wireshark", MODE="0640"
   '';
 
-  networking.hostName = hostname; # Define your hostname.
+  networking.hostName = hostname;
 
   # Enable networking
   networking.networkmanager.enable = true;
@@ -96,14 +93,6 @@ in
   services.undervolt = {
     enable = true;
     coreOffset = -45;
-    # p1 = {
-    #   limit = 85;
-    #   window = 28;
-    # };
-    # p2 = {
-    #   limit = 160;
-    #   window = 0.004;
-    # };
   };
 
   # Enable the X11 windowing system.
@@ -129,17 +118,7 @@ in
     alsa.enable = true;
     alsa.support32Bit = true;
     pulse.enable = true;
-    # If you want to use JACK applications, uncomment this
-    #jack.enable = true;
   };
-
-  ## Enable automatic login for the user.
-  #services.displayManager.autoLogin.enable = true;
-  #services.displayManager.autoLogin.user = "b";
-  #
-  ## Workaround for GNOME autologin: https://github.com/NixOS/nixpkgs/issues/103746#issuecomment-945091229
-  #systemd.services."getty@tty1".enable = false;
-  #systemd.services."autovt@tty1".enable = false;
 
   # Install firefox.
   programs.firefox.enable = true;
@@ -216,7 +195,7 @@ in
   age.secrets.frp-token = {
     file = ../../secrets/frp-token.age;
     group = "frp-secret";
-    mode = "0440"; # group-readable
+    mode = "0440";
   };
   b.frpc = {
     enable = true;
@@ -224,20 +203,13 @@ in
     group = "frp-secret";
     tokenFile = config.age.secrets.frp-token.path;
     proxies = [ ];
-    # proxies = [
-    #   name = "archipelago";
-    #   type = "tcp";
-    #   localIP = "127.0.0.1";
-    #   localPort = 38281;
-    #   remotePort = 38281;
-    # ];
   };
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
-  # on your system were taken. It‘s perfectly fine and recommended to leave
+  # on your system were taken. It's perfectly fine and recommended to leave
   # this value at the release version of the first install of this system.
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "23.11"; # Did you read the comment?
+  system.stateVersion = "23.11";
 }

@@ -37,15 +37,15 @@ in
     systemd.services.llama = {
       description = "Llama.cpp inference server";
       wantedBy = [ "multi-user.target" ];
-      serviceConfig = {
-        ExecStart = "${pkgs.writeShellScript \"llama-run\" ''\
-          exec ${llamaPkg}/bin/llama-cli \
-            --model ${config.services.llama.model} \
-            --port ${toString config.services.llama.port}\
-        ''}";
-        Restart = "on-failure";
-        DynamicUser = true;
-      };
+serviceConfig = {
+          ExecStart = pkgs.writeShellScript "llama-run" ''
+            exec ${llamaPkg}/bin/llama-cli \
+              --model ${config.services.llama.model} \
+              --port ${toString config.services.llama.port}
+          '';
+          Restart = "on-failure";
+          DynamicUser = true;
+        };
     };
   };
 }

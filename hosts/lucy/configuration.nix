@@ -16,6 +16,7 @@
     # CUSTOM MODULES
     ../../modules/gnome.nix
     ../../modules/nix-settings.nix
+    ../../modules/avahi.nix
   ];
 
   # Users config

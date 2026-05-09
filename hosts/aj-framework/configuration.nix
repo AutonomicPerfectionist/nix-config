@@ -14,6 +14,7 @@
 
     # CUSTOM MODULES
     ../../modules/nix-settings.nix
+    ../../modules/avahi.nix
     ../../modules/gnome.nix
     ../../modules/gaming.nix
     ../../modules/flatpak.nix

@@ -15,6 +15,7 @@
 
     # Custom modules
     ../../modules/nix-settings.nix
+    ../../modules/avahi.nix
 
     # Frpc bespoke custom module
     ./frpc/goblin-frpc.nix

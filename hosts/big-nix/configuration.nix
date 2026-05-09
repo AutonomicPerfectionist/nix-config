@@ -11,6 +11,7 @@
     ./hardware-configuration.nix
     ../../modules/nix-settings.nix
     ../../modules/avahi.nix
+    ../../modules/compute.nix
     ../../modules/cluster/mounts.nix
     ../../modules/cluster/management.nix
     ../../modules/cluster/distributed.nix
@@ -46,6 +47,8 @@
   hardware.gpu.nvidia.cards = [
     "quadro_m6000"
   ];
+
+  enableCudaSupport = true;
 
   networking.hostName = "big-nix";
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.

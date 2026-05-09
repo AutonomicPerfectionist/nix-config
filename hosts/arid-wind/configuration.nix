@@ -10,6 +10,7 @@
     # Include the results of the hardware scan.
     ./hardware-configuration.nix
     ../../modules/nix-settings.nix
+    ../../modules/compute.nix
     ../../modules/cluster/mounts.nix
     ../../modules/cluster/management.nix
     ../../modules/cluster/distributed.nix
@@ -55,6 +56,7 @@
   # Additional hardware and driver configuration
   hardware.graphics.enable = true;
   hardware.gpu.amd.enable = true;
+  enableRocmSupport = true;
 
   # Container configuration
   virtualisation.podman.enable = true;

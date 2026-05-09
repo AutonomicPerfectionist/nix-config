@@ -21,6 +21,7 @@
 
   hardware.graphics.enable = true;
   hardware.gpu.amd.enable = true;
+  enableRocmSupport = true;
 
   hardware.infiniband.guids = [
     "0x001175000073bbd6"

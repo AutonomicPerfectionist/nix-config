@@ -3,6 +3,10 @@
   pkgs,
   ...
 }:
+let
+  flake-inputs = config._module.args.flake-inputs or {};
+  hostsList = if flake-inputs ? nixosConfigurations then builtins.concatStringsSep " " (builtins.attrNames flake-inputs.nixosConfigurations) else "hypergamma goblin aj-framework lucy big-nix thunder-budget-3 thunder-budget-4 arid-wind fatman-3 king-blue queen-blue";
+in
 {
   imports = [
 
@@ -166,6 +170,27 @@
     shellGlobalAliases = {
       "--help" = "--help 2>&1 | bat --language=help --style=plain";
     };
+
+    # NixOS switch function with completion
+    initContent = ''
+      nixos-switch() {
+        local host="$1"
+        if [[ -z "$host" ]]; then
+          echo "Usage: nixos-switch <hostname>"
+          echo "Available hosts: ${hostsList}"
+          return 1
+        fi
+        nh os switch ".#''${host}" --target-host="''${host}.local" --build-host="''${host}.local"
+      }
+
+      _nixos-switch() {
+        local -a hosts
+        hosts=(${hostsList})
+        _describe 'hosts' hosts
+      }
+
+      compdef _nixos-switch nixos-switch
+    '';
   };
 
   # Carapace is a better tab-completion manager

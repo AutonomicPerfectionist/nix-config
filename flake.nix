@@ -53,8 +53,6 @@
           };
         };
 
-    in
-    {
       nixosConfigurations = {
 
         hypergamma = mkConfiguration {
@@ -148,6 +146,16 @@
             inputs.agenix.nixosModules.default
           ];
         };
+      };
+
+      allHostNames = builtins.attrNames nixosConfigurations;
+
+    in
+    {
+      inherit nixosConfigurations;
+
+      lib = {
+        nixosHostNames = allHostNames;
       };
     };
 }

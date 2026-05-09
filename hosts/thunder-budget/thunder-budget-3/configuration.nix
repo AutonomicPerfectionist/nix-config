@@ -7,7 +7,7 @@
 }:
 {
     imports = [
-      ../../modules/ml/llama.nix
+      
     ./hardware-configuration.nix
     ../common_configuration.nix
   ];

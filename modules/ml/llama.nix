@@ -34,7 +34,23 @@ in
   };
 
   # Install the appropriate llama package regardless of service enablement
-  environment.systemPackages = [ (llamaPkg.override { version = llamaVersion; }) ];
+  config = {
+    environment.systemPackages = [ (llamaPkg.override { version = llamaVersion; }) ];
+  } // lib.mkIf config.services.llama.enable {
+    systemd.services.llama = {
+      description = "Llama.cpp inference server";
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        ExecStart = "${pkgs.writeShellScript \"llama-run\" ''\
+          exec ${llamaPkg}/bin/llama-cli \
+            --model ${config.services.llama.model} \
+            --port ${toString config.services.llama.port}\
+        ''}";
+        Restart = "on-failure";
+        DynamicUser = true;
+      };
+    };
+  };
 
   config = lib.mkIf config.services.llama.enable {
     # Simple systemd service to run llama.cpp server

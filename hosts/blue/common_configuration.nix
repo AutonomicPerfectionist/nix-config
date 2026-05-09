@@ -12,6 +12,7 @@
     ../../modules/cluster/management.nix
     ../../modules/cluster/distributed.nix
     ../../modules/input-methods.nix
+    ../../modules/ml/llama.nix
     ../../hardware/gpus/gpus.nix
     ../../modules/common/overlays.nix
     flake-inputs.home-manager.nixosModules.default
@@ -44,7 +45,7 @@
     micro
     htop
     xclip
-    llama-cpp-sycl
+
   ];
 
   services.openssh.enable = true;

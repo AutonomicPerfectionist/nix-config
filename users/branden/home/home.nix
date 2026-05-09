@@ -46,6 +46,11 @@
     python314Packages.clustershell
     nix-ld
     devenv
+
+    # Nix linting, formatting, and IDE support
+    deadnix
+    nixfmt-rfc-style
+    nil
     # vscodium
     # vscode
     # zed-editor

@@ -12,7 +12,7 @@
       authentication = pkgs.lib.mkOverride 10 ''
         #type database  DBuser  auth-method
         local all       all     trust
-        
+
         #type database user address   method
         host  all      all  localhost trust
       '';

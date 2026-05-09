@@ -30,7 +30,7 @@ in
       hardware.nvidia = {
         # Enable Nvidia settings menu
         nvidiaSettings = mkIf cfg.hardware.graphics.enable true;
-        
+
         # Modesetting is required
         modesetting.enable = true;
 
@@ -80,8 +80,7 @@ in
       };
     }
 
-    (mkIf (builtins.elem "quadro_m6000" cfg.hardware.gpu.nvidia.cards){
-
+    (mkIf (builtins.elem "quadro_m6000" cfg.hardware.gpu.nvidia.cards) {
 
       # Card-specific configurations
       hardware.nvidia = {

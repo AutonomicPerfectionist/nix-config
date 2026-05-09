@@ -36,7 +36,6 @@
   # Kernel 6.12 has the ib_qib module needed for the infiniband cards
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
-
   # Additional hardware and driver configuration
   hardware.graphics.enable = true;
   hardware.gpu.intel.enable = true;

@@ -5,11 +5,10 @@
   ...
 }:
 {
- 
 
   environment.systemPackages = with pkgs; [
-  	mpi
-  	prrte
+    mpi
+    prrte
   ];
 
 }

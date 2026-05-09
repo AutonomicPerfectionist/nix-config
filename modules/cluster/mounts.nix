@@ -11,7 +11,7 @@
   boot.swraid.enable = true;
 
   environment.systemPackages = with pkgs; [
-  	parted
+    parted
   ];
 
   fileSystems."/mnt/cluster" = {
@@ -29,6 +29,5 @@
       "async"
     ];
   };
-
 
 }

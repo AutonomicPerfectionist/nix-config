@@ -5,7 +5,7 @@
 }:
 {
   imports = [
-    
+
   ];
 
   # Home Manager needs a bit of information about you and the
@@ -23,7 +23,6 @@
   # changes in each release.
   home.stateVersion = "23.11";
 
-
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
 
@@ -34,7 +33,6 @@
     EDITOR = "micro";
   };
 
-  
   home.packages = with pkgs; [
     bat
     comma
@@ -64,21 +62,19 @@
     # asdf-vm
   ];
 
-  
   fonts.fontconfig.enable = true;
 
-  
   home.file.".config/nixpkgs/config.nix".text = ''
     	{
     		allowUnfree = true;
     	}
     	'';
 
-	xdg.enable = true;
-	xdg.configFile."clustershell/config.d/sudo.conf".source = ./config/clustersh/sudo.conf;
-	xdg.configFile."clustershell/groups.d/groups.yaml".source = ./config/clustersh/groups.yaml;
-	xdg.configFile."clustershell/clush.conf".source = ./config/clustersh/clush.conf;
-	xdg.configFile."clustershell/groups.conf".source = ./config/clustersh/groups.conf;
+  xdg.enable = true;
+  xdg.configFile."clustershell/config.d/sudo.conf".source = ./config/clustersh/sudo.conf;
+  xdg.configFile."clustershell/groups.d/groups.yaml".source = ./config/clustersh/groups.yaml;
+  xdg.configFile."clustershell/clush.conf".source = ./config/clustersh/clush.conf;
+  xdg.configFile."clustershell/groups.conf".source = ./config/clustersh/groups.conf;
 
   # Git config
   # Delta is a prettier diff tool with good git integration
@@ -128,8 +124,6 @@
       };
     };
   };
-  
-  
 
   # EZA is a better ls
   programs.eza.enable = true;
@@ -216,8 +210,7 @@
       };
     };
   };
-  
-  
+
   programs.micro.enable = true;
   programs.micro.settings = {
     diffgutter = true;
@@ -230,9 +223,9 @@
 
   programs.less.enable = true;
   programs.less.options = {
-      RAW-CONTROL-CHARS = true;
-      # quiet = true;
-      wheel-lines = 3;
-    };
+    RAW-CONTROL-CHARS = true;
+    # quiet = true;
+    wheel-lines = 3;
+  };
 
 }

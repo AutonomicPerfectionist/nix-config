@@ -59,38 +59,34 @@
         inherit (prev)
           level-zero
           intel-compute-runtime
-          intel-graphics-compiler;
+          intel-graphics-compiler
+          ;
       };
 
       # Ensure SYCL packages (notably llama-cpp-sycl) are built against the same pkgs set,
       # so they share Level Zero and compute runtime ABI.
       syclOverlay = final: prev: {
-        llama-cpp-sycl =
-          inputs.sycl.packages.${prev.system}.llama-cpp-sycl.overrideAttrs (old: {
+        llama-cpp-sycl = inputs.sycl.packages.${prev.system}.llama-cpp-sycl.overrideAttrs (old: {
 
-			cmakeFlags = (old.cmakeFlags or []) ++ [
-              "-DGGML_RPC=ON"
-            ];
-      
-            nativeBuildInputs =
-              (old.nativeBuildInputs or [])
-              ++ [ prev.addDriverRunpath ];
-      
-            buildInputs =
-              (old.buildInputs or [])
-              ++ [
-                prev.level-zero
-                prev.intel-compute-runtime
-              ];
-      
-            postFixup = (old.postFixup or "") + ''
-              for bin in $out/bin/*; do
-                if [ -x "$bin" ] && file "$bin" | grep -q ELF; then
-                  addDriverRunpath "$bin"
-                fi
-              done
-            '';
-          });
+          cmakeFlags = (old.cmakeFlags or [ ]) ++ [
+            "-DGGML_RPC=ON"
+          ];
+
+          nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ prev.addDriverRunpath ];
+
+          buildInputs = (old.buildInputs or [ ]) ++ [
+            prev.level-zero
+            prev.intel-compute-runtime
+          ];
+
+          postFixup = (old.postFixup or "") + ''
+            for bin in $out/bin/*; do
+              if [ -x "$bin" ] && file "$bin" | grep -q ELF; then
+                addDriverRunpath "$bin"
+              fi
+            done
+          '';
+        });
       };
 
     in
@@ -104,12 +100,15 @@
             inputs.agenix.nixosModules.default
 
             # Global pkgs consistency for SYCL + Intel stack
-            ({ ... }: {
-              nixpkgs.overlays = [
-                intelOverlay
-                syclOverlay
-              ];
-            })
+            (
+              { ... }:
+              {
+                nixpkgs.overlays = [
+                  intelOverlay
+                  syclOverlay
+                ];
+              }
+            )
           ];
         };
 
@@ -119,12 +118,15 @@
             ./hosts/goblin/configuration.nix
             inputs.agenix.nixosModules.default
 
-            ({ ... }: {
-              nixpkgs.overlays = [
-                intelOverlay
-                syclOverlay
-              ];
-            })
+            (
+              { ... }:
+              {
+                nixpkgs.overlays = [
+                  intelOverlay
+                  syclOverlay
+                ];
+              }
+            )
           ];
         };
 
@@ -134,12 +136,15 @@
             ./hosts/aj-framework/configuration.nix
             inputs.nixos-hardware.nixosModules.framework-12th-gen-intel
 
-            ({ ... }: {
-              nixpkgs.overlays = [
-                intelOverlay
-                syclOverlay
-              ];
-            })
+            (
+              { ... }:
+              {
+                nixpkgs.overlays = [
+                  intelOverlay
+                  syclOverlay
+                ];
+              }
+            )
           ];
         };
 
@@ -149,12 +154,15 @@
             ./hosts/lucy/configuration.nix
             inputs.agenix.nixosModules.default
 
-            ({ ... }: {
-              nixpkgs.overlays = [
-                intelOverlay
-                syclOverlay
-              ];
-            })
+            (
+              { ... }:
+              {
+                nixpkgs.overlays = [
+                  intelOverlay
+                  syclOverlay
+                ];
+              }
+            )
           ];
         };
 
@@ -164,12 +172,15 @@
             ./hosts/big-nix/configuration.nix
             inputs.agenix.nixosModules.default
 
-            ({ ... }: {
-              nixpkgs.overlays = [
-                intelOverlay
-                syclOverlay
-              ];
-            })
+            (
+              { ... }:
+              {
+                nixpkgs.overlays = [
+                  intelOverlay
+                  syclOverlay
+                ];
+              }
+            )
           ];
         };
 
@@ -179,12 +190,15 @@
             ./hosts/thunder-budget/thunder-budget-3/configuration.nix
             inputs.agenix.nixosModules.default
 
-            ({ ... }: {
-              nixpkgs.overlays = [
-                intelOverlay
-                syclOverlay
-              ];
-            })
+            (
+              { ... }:
+              {
+                nixpkgs.overlays = [
+                  intelOverlay
+                  syclOverlay
+                ];
+              }
+            )
           ];
         };
 
@@ -194,12 +208,15 @@
             ./hosts/thunder-budget/thunder-budget-4/configuration.nix
             inputs.agenix.nixosModules.default
 
-            ({ ... }: {
-              nixpkgs.overlays = [
-                intelOverlay
-                syclOverlay
-              ];
-            })
+            (
+              { ... }:
+              {
+                nixpkgs.overlays = [
+                  intelOverlay
+                  syclOverlay
+                ];
+              }
+            )
           ];
         };
 
@@ -209,18 +226,21 @@
             ./hosts/arid-wind/configuration.nix
             inputs.disko.nixosModules.disko
             inputs.agenix.nixosModules.default
-			({ ... }: {
-              nixpkgs.overlays = [
-                (final: prev: {
-                 llama-cpp-rocm = prev.llama-cpp-rocm.overrideAttrs (old: {
-                   cmakeFlags = (old.cmakeFlags or []) ++ [
-                     "-DGGML_RPC=ON"
-                   ];
-                 });
-               })
-              ];
-            })
-           
+            (
+              { ... }:
+              {
+                nixpkgs.overlays = [
+                  (final: prev: {
+                    llama-cpp-rocm = prev.llama-cpp-rocm.overrideAttrs (old: {
+                      cmakeFlags = (old.cmakeFlags or [ ]) ++ [
+                        "-DGGML_RPC=ON"
+                      ];
+                    });
+                  })
+                ];
+              }
+            )
+
           ];
         };
 
@@ -231,12 +251,15 @@
             inputs.disko.nixosModules.disko
             inputs.agenix.nixosModules.default
 
-            ({ ... }: {
-              nixpkgs.overlays = [
-                intelOverlay
-                syclOverlay
-              ];
-            })
+            (
+              { ... }:
+              {
+                nixpkgs.overlays = [
+                  intelOverlay
+                  syclOverlay
+                ];
+              }
+            )
           ];
         };
 
@@ -248,12 +271,15 @@
             inputs.agenix.nixosModules.default
 
             # Required for SYCL + Intel stack coherence in system closure
-            ({ ... }: {
-              nixpkgs.overlays = [
-                intelOverlay
-                syclOverlay
-              ];
-            })
+            (
+              { ... }:
+              {
+                nixpkgs.overlays = [
+                  intelOverlay
+                  syclOverlay
+                ];
+              }
+            )
           ];
         };
 
@@ -264,12 +290,15 @@
             inputs.disko.nixosModules.disko
             inputs.agenix.nixosModules.default
 
-            ({ ... }: {
-              nixpkgs.overlays = [
-                intelOverlay
-                syclOverlay
-              ];
-            })
+            (
+              { ... }:
+              {
+                nixpkgs.overlays = [
+                  intelOverlay
+                  syclOverlay
+                ];
+              }
+            )
           ];
         };
       };

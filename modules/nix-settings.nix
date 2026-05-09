@@ -5,7 +5,10 @@
 }:
 {
   nix.settings = {
-  	trusted-users = [ "root" "branden" ];
+    trusted-users = [
+      "root"
+      "branden"
+    ];
     experimental-features = [
       "nix-command"
       "flakes"

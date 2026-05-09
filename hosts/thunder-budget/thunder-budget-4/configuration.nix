@@ -7,7 +7,6 @@
 }:
 {
   imports = [
-    # Include the results of the hardware scan.
     ./hardware-configuration.nix
     ../common_configuration.nix
   ];
@@ -43,5 +42,4 @@
   networking.localCommands = ''
     echo connected > /sys/class/net/ibs1/mode
   '';
-
 }

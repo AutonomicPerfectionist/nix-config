@@ -7,12 +7,9 @@
 }:
 {
   imports = [
-    # Include the results of the hardware scan.
     ./hardware-configuration.nix
-    ../../../hardware/gpus/gpus.nix
     ./disk-config.nix
     ../common_configuration.nix
-    flake-inputs.home-manager.nixosModules.default
   ];
 
   userconfig.branden = {
@@ -20,11 +17,10 @@
     hostname = "fatman-3";
   };
 
-  # Additional hardware and driver configuration
+  networking.hostName = "fatman-3";
+
   hardware.graphics.enable = true;
   hardware.gpu.amd.enable = true;
-
-  networking.hostName = "fatman-3";
 
   hardware.infiniband.guids = [
     "0x001175000073bbd6"
@@ -50,5 +46,4 @@
   networking.localCommands = ''
     echo connected > /sys/class/net/ibp4s0/mode
   '';
-
 }

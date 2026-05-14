@@ -17,7 +17,10 @@
 
     # Users
     ../../users/branden
+    ../../users/remotebuild
   ];
+
+  nix.settings.system-features = ["nixos-test" "benchmark" "big-parallel" "kvm" "gccarch-ivybridge"];
 
   home-manager = {
     extraSpecialArgs = { inherit flake-inputs; };

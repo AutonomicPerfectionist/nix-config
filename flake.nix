@@ -87,6 +87,15 @@
           ];
         };
 
+        battle-bucket = mkConfiguration {
+          system = "x86_64-linux";
+          modules = [
+            ./hosts/battle-bucket/configuration.nix
+            inputs.disko.nixosModules.disko
+            inputs.agenix.nixosModules.default
+          ];
+        };
+
         big-nix = mkConfiguration {
           system = "x86_64-linux";
           modules = [
@@ -115,6 +124,15 @@
           system = "x86_64-linux";
           modules = [
             ./hosts/arid-wind/configuration.nix
+            inputs.disko.nixosModules.disko
+            inputs.agenix.nixosModules.default
+          ];
+        };
+
+        fatman-2 = mkConfiguration {
+          system = "x86_64-linux";
+          modules = [
+            ./hosts/fatman/fatman-2/configuration.nix
             inputs.disko.nixosModules.disko
             inputs.agenix.nixosModules.default
           ];

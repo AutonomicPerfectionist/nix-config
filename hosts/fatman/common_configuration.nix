@@ -9,6 +9,7 @@
     ../../modules/nix-settings.nix
     ../../modules/avahi.nix
     ../../modules/compute.nix
+    ../../modules/ml/llama.nix
     ../../modules/distributed-builds.nix
     ../../modules/ml/llama.nix
     ../../modules/distributed-builds.nix

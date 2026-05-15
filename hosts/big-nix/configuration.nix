@@ -17,9 +17,11 @@
     ../../modules/cluster/distributed.nix
     ../../hardware/gpus/gpus.nix
     flake-inputs.home-manager.nixosModules.default
+    ../../modules/ml/llama.nix
+    ../../modules/distributed-builds.nix
 
     # Users
-    ../../modules/ml/llama.nix
+    
     ../../users/branden
   ];
 
@@ -98,6 +100,7 @@
     micro
     htop
     xclip
+    opencode
   ];
 
   # Some programs need SUID wrappers, can be configured further or are

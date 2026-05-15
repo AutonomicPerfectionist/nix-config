@@ -23,10 +23,13 @@
       "nolock"
       "intr"
       "tcp"
-      "actimeo=1800"
       "rsize=131072"
       "wsize=131072"
       "async"
+      "acregmin=5"
+      "acregmax=30"
+      "acdirmin=1"
+      "acdirmax=5"
     ];
   };
 

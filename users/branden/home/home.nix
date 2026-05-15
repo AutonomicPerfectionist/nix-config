@@ -1,12 +1,16 @@
 {
   config,
   pkgs,
+  flake-inputs,
   ...
 }:
 let
-  flake-inputs = config._module.args.flake-inputs or {};
-  hostsList = if flake-inputs ? nixosConfigurations then builtins.concatStringsSep " " (builtins.attrNames flake-inputs.nixosConfigurations) else "hypergamma goblin aj-framework lucy big-nix thunder-budget-3 thunder-budget-4 arid-wind fatman-3 king-blue queen-blue";
+  hostsList =
+    if flake-inputs ? nixosConfigurations
+    then builtins.concatStringsSep " " (builtins.attrNames flake-inputs.nixosConfigurations)
+    else "hypergamma goblin aj-framework lucy big-nix thunder-budget-3 thunder-budget-4 arid-wind fatman-3 king-blue queen-blue";
 in
+
 {
   imports = [
 
@@ -44,7 +48,6 @@ in
     nerd-fonts.comic-shanns-mono
     nerd-fonts.meslo-lg
     nerd-fonts.fira-code
-    ansible
     python314Packages.clustershell
     nix-ld
     devenv
@@ -64,6 +67,28 @@ in
     # spotify
     # gimp
     # asdf-vm
+
+    # ===== CORE TERMINAL TOOLING =====
+    helix
+    glow
+    zoxide
+    lazygit
+    dust
+    procs
+    yazi
+    ast-grep
+    atuin
+    just
+    zellij
+
+    # LSPs / dev tooling
+    basedpyright
+    ruff
+    clang-tools
+
+    # shell UX plugins (installed via nixpkgs)
+    zsh-you-should-use
+    zsh-fzf-tab
   ];
 
   fonts.fontconfig.enable = true;
@@ -118,7 +143,7 @@ in
       nix_shell = {
         disabled = false;
         # impure_msg = "";
-        # symbol = "";
+        # symbol = "";
         # format = "[$symbol$state]($style) ";
         heuristic = true;
       };
@@ -135,7 +160,24 @@ in
   programs.fzf = {
     enable = true;
     enableZshIntegration = true;
+  };
 
+  # =========================
+  # DIRNAV / HISTORY
+  # =========================
+  programs.zoxide = {
+    enable = true;
+    enableZshIntegration = true;
+  };
+
+  programs.atuin = {
+    enable = true;
+    enableZshIntegration = true;
+    settings = {
+      style = "compact";
+      enter_accept = true;
+      inline_height = 20;
+    };
   };
 
   programs.zsh = {
@@ -153,6 +195,30 @@ in
         src = pkgs.zsh-autopair.src;
       }
 
+      {
+        name = "you-should-use";
+        src = pkgs.zsh-you-should-use.src;
+      }
+
+      {
+        name = "zsh-auto-notify";
+        src = pkgs.fetchFromGitHub {
+          owner = "MichaelAquilina";
+          repo = "zsh-auto-notify";
+          rev = "0.8.0";
+          sha256 = "sha256-bY0qLX5Kpt2x4KnfvXjYK2+BhR3zKBgGsCvIxSzApws=";
+        };
+      }
+
+      {
+        name = "forgit";
+        src = pkgs.zsh-forgit.src;
+      }
+
+      {
+        name = "zsh-fzf-tab";
+        src = pkgs.zsh-fzf-tab.src;
+      }
     ];
 
     # Probably don't need this anymore
@@ -164,6 +230,10 @@ in
       #nixswitch = ("nh os switch ~/nixos#" + userConfiguration.hostname);
       ls = "eza --git -F --icons --hyperlink -g";
       lsa = "ls -alh";
+
+      hx = "helix";
+      lg = "lazygit";
+      zj = "zellij";
     };
 
     # Prettier help with auto paging
@@ -173,6 +243,88 @@ in
 
     # NixOS switch function with completion
     initContent = ''
+      # =========================
+      # DEV CHEATSHEET
+      # =========================
+      dev-cheatsheet() {
+        cat <<'EOF'
+
+Navigation:
+  z <dir>        → smart cd (zoxide)
+  zi             → interactive directory jump
+
+Files:
+  y              → file manager (yazi)
+  eza            → modern ls
+
+Search:
+  rg <pattern>   → ripgrep
+  fd <name>      → fast find
+  sg <pattern>   → ast-grep (structural search)
+
+Git:
+  lazygit        → full git UI
+  git            → CLI (use sparingly)
+
+System:
+  btop           → system monitor
+  dust           → disk usage
+  procs          → process viewer
+
+Editor:
+  hx             → Helix editor
+
+Markdown:
+  glow file.md   → markdown preview
+
+Session:
+  zellij         → terminal multiplexer
+
+AI / Helpers:
+  atuin          → shell history
+
+EOF
+      }
+
+      # =========================
+      # SAFE TOOL SUGGESTIONS
+      # =========================
+      # Only runs in interactive shells
+      if [[ $- == *i* ]]; then
+
+        suggest_tool() {
+          local cmd="$1"
+
+          case "$cmd" in
+            ls)
+              echo "[hint] consider: eza (better ls)" ;;
+            cd)
+              echo "[hint] consider: zoxide (z <dir>)" ;;
+            du)
+              echo "[hint] consider: dust (visual disk usage)" ;;
+            ps)
+              echo "[hint] consider: procs (better process view)" ;;
+            find)
+              echo "[hint] consider: fd (faster find)" ;;
+            grep)
+              echo "[hint] consider: rg (ripgrep)" ;;
+            vim|vi|nano)
+              echo "[hint] consider: hx (Helix editor)" ;;
+            git)
+              echo "[hint] consider: lazygit (interactive git UI)" ;;
+          esac
+        }
+
+        # zsh hook: only for interactive command lines
+        preexec() {
+          suggest_tool "$1"
+        }
+
+      fi
+
+      # =========================
+      # NIXOS SWITCH HELPER
+      # =========================
       nixos-switch() {
         local host="$1"
         if [[ -z "$host" ]]; then

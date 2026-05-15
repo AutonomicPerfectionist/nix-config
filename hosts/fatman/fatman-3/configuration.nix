@@ -20,11 +20,7 @@ fileSystems."/nix" = {
          gcc.tune = "ivybridge";
          system = "x86_64-linux";
        };
-       # nixpkgs.targetPlatform = {
-       #          gcc.arch = "ivybridge";
-       #          gcc.tune = "ivybridge";
-       #          system = "x86_64-linux";
-       #        };
+       
     imports = [
       
     ./hardware-configuration.nix

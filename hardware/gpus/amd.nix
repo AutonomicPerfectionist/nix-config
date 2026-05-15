@@ -29,7 +29,7 @@ in
     {
 
       environment.systemPackages = with pkgs; [
-      	nvtopPackages.amd;
+      	nvtopPackages.amd
       ];   
 
       hardware.graphics = {

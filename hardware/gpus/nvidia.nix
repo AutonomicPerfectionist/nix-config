@@ -1,5 +1,5 @@
 # gpus.nix
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 
 with lib;
 
@@ -25,10 +25,11 @@ in
     {
       # NOTE: For docker passthrough, may need:  --device=nvidia.com/gpu=all
       environment.systemPackages = with pkgs; [
-      	nvtopPackages.nvidia;
+      	nvtopPackages.nvidia
       ];
       # Common NVIDIA configuration
       nixpkgs.config.nvidia.acceptLicense = true;
+      nixpkgs.config.cudaSupport = true;
       hardware.nvidia = {
         # Enable Nvidia settings menu
         nvidiaSettings = mkIf cfg.hardware.graphics.enable true;
@@ -87,6 +88,14 @@ in
       # Card-specific configurations
       hardware.nvidia = {
         package = config.boot.kernelPackages.nvidiaPackages.legacy_390;
+      };
+    })
+
+    (mkIf (builtins.elem "tesla_p40" cfg.hardware.gpu.nvidia.cards) {
+    
+      # Card-specific configurations
+      hardware.nvidia = {
+        package = config.boot.kernelPackages.nvidiaPackages.legacy_580;
       };
     })
   ]);

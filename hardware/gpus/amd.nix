@@ -28,6 +28,10 @@ in
   config = mkIf cfg.hardware.gpu.amd.enable (mkMerge [
     {
 
+      environment.systemPackages = with pkgs; [
+      	nvtopPackages.amd;
+      ];   
+
       hardware.graphics = {
         enable = true;
         enable32Bit = true;

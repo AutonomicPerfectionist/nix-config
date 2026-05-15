@@ -110,7 +110,6 @@
     micro
     htop
     xclip
-    llama-cpp-rocm
   ];
 
   # Some programs need SUID wrappers, can be configured further or are

@@ -24,7 +24,9 @@ in
   config = mkIf cfg.hardware.gpu.nvidia.enable (mkMerge [
     {
       # NOTE: For docker passthrough, may need:  --device=nvidia.com/gpu=all
-
+      environment.systemPackages = with pkgs; [
+      	nvtopPackages.nvidia;
+      ];
       # Common NVIDIA configuration
       nixpkgs.config.nvidia.acceptLicense = true;
       hardware.nvidia = {

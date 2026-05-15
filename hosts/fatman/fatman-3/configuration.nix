@@ -6,6 +6,25 @@
   ...
 }:
 {
+
+fileSystems."/nix" = {
+     device = "/dev/disk/by-uuid/676e3d90-fbd8-4a95-a886-668acfff6cfc";
+     fsType = "ext4";
+     neededForBoot = true;
+     options = [ "noatime" ];
+   };
+
+ nix.settings.system-features = ["nixos-test" "benchmark" "big-parallel" "kvm" "gccarch-ivybridge"];
+       nixpkgs.hostPlatform = {
+         gcc.arch = "ivybridge";
+         gcc.tune = "ivybridge";
+         system = "x86_64-linux";
+       };
+       # nixpkgs.targetPlatform = {
+       #          gcc.arch = "ivybridge";
+       #          gcc.tune = "ivybridge";
+       #          system = "x86_64-linux";
+       #        };
     imports = [
       
     ./hardware-configuration.nix

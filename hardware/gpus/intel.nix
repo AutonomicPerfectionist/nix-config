@@ -61,6 +61,7 @@ in
         intel-graphics-compiler
         sycl-info
         clinfo
+        nvtopPackages.intel
       ];
 
       # May help if FFmpeg/VAAPI/QSV init fails (esp. on Arc with i915):

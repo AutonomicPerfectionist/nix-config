@@ -54,6 +54,99 @@ let
       ];
     });
   };
+
+  noHaddockOverlay = final: prev: {
+    haskellPackages = prev.haskellPackages.override {
+      overrides = hfinal: hprev: {
+        mkDerivation = args:
+          hprev.mkDerivation (args // {
+            doHaddock = false;
+          });
+      };
+    };
+  };
+
+  # Rebuild ROCm's LLVM fork respecting the host platform's CPU architecture,
+  # preventing BMI2/AVX2 instructions from being emitted on hosts that lack them.
+  # Uses final.stdenv.hostPlatform to derive march flags so this works generically
+  # across any host, not just ivybridge.
+  rocmLlvmOverlay = final: prev:
+    let
+      hostArch =
+        final.stdenv.hostPlatform.gcc.arch
+          or final.stdenv.hostPlatform.parsed.cpu.name;
+  
+      marchFlag = "-march=${hostArch}";
+  
+      noExtensionFlags = lib.optionals
+        (!(builtins.elem "avx2" (final.stdenv.hostPlatform.gcc.isa or [ ])))
+        [
+          "-mno-avx2"
+          "-mno-bmi2"
+          "-mno-bmi"
+          "-mno-movbe"
+          "-mno-fma"
+          "-mno-lzcnt"
+          "-mno-rdrnd"
+          "-mno-f16c"
+        ];
+  
+      hostCFlags = lib.concatStringsSep " " ([ marchFlag ] ++ noExtensionFlags);
+  
+      # Strip hardcoded skylake/znver3 flags from NIX_CFLAGS_COMPILE in env
+      # and replace with host-appropriate flags.
+      patchCFlags = pkg: pkg.overrideAttrs (old: {
+        env = (old.env or { }) // {
+          NIX_CFLAGS_COMPILE = lib.pipe (old.env.NIX_CFLAGS_COMPILE or "") [
+            (lib.splitString " ")
+            (builtins.filter (f:
+              f != "-march=skylake" &&
+              f != "-mtune=znver3" &&
+              f != ""
+            ))
+            (flags: flags ++ [ hostCFlags ])
+            (lib.concatStringsSep " ")
+          ];
+        };
+      });
+  
+      llvmPackages_22_patched = prev.llvmPackages_22 // {
+        override = args:
+          let
+            base = prev.llvmPackages_22.override args;
+            patchedLibstdcxxClang = base.libstdcxxClang.overrideAttrs (old: {
+              postFixup = (old.postFixup or "") + ''
+                echo "${hostCFlags}" >> $out/nix-support/cc-cflags
+              '';
+            });
+          in
+          base // {
+            inherit (base) override overrideScope;
+            libstdcxxClang = patchedLibstdcxxClang;
+          };
+      };
+    in
+    {
+      rocmPackages = prev.rocmPackages.overrideScope (scopeFinal: scopePrev: {
+        llvm = lib.recurseIntoAttrs (
+          let
+            base = lib.callPackageWith
+              (final // {
+                inherit (scopePrev) rocm-device-libs;
+                llvmPackages_22 = llvmPackages_22_patched;
+              })
+              (prev.path + "/pkgs/development/rocm-modules/llvm/default.nix")
+              { };
+          in
+          base // {
+            llvm = patchCFlags base.llvm;
+            lld = patchCFlags base.lld;
+            clang-unwrapped = patchCFlags base.clang-unwrapped;
+          }
+        );
+      });
+    };
+
 in
 {
   # Enable sycl-intel for Intel GPUs (default), rocm-amd for AMD GPUs
@@ -63,10 +156,11 @@ in
   };
 
   config = {
-    nixpkgs.overlays = [
-      (lib.mkIf config.scl.overlays.sycl-intel intelOverlay)
-      (lib.mkIf config.scl.overlays.sycl-intel syclOverlay)
-      (lib.mkIf config.scl.overlays.rocm-amd rocmOverlay)
+    nixpkgs.overlays = lib.concatLists [
+      (lib.optionals config.scl.overlays.sycl-intel [ intelOverlay syclOverlay ])
+      (lib.optionals config.scl.overlays.rocm-amd [ rocmOverlay ])
+      [ noHaddockOverlay ]
+      [ rocmLlvmOverlay  ]
     ];
   };
 }

@@ -12,6 +12,8 @@ in
 {
   imports = [
     flake-inputs.home-manager.nixosModules.default
+    # Same config as G7 oddly enough
+    flake-inputs.nixos-hardware.nixosModules.dell-g3-3779
     ./hardware-configuration.nix
     ./disk-config.nix
 

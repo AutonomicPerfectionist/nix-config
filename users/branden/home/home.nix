@@ -12,9 +12,7 @@ let
 in
 
 {
-  imports = [
-
-  ];
+  imports = [];
 
   # Home Manager needs a bit of information about you and the
   # paths it should manage.
@@ -69,7 +67,7 @@ in
     # asdf-vm
 
     # ===== CORE TERMINAL TOOLING =====
-    helix
+    # helix
     glow
     zoxide
     lazygit
@@ -123,6 +121,12 @@ in
     init.defaultBranch = "main";
   };
 
+  programs.helix = {
+    enable = true;
+    settings = {
+      theme = "ao";
+    };
+  };
   programs.direnv = {
     enable = true;
     enableZshIntegration = true;

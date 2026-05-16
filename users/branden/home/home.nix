@@ -36,7 +36,7 @@ in
 
   programs.bash.enable = true;
   home.sessionVariables = {
-    EDITOR = "micro";
+    EDITOR = "hx";
   };
 
   home.packages = with pkgs; [
@@ -234,8 +234,6 @@ in
       #nixswitch = ("nh os switch ~/nixos#" + userConfiguration.hostname);
       ls = "eza --git -F --icons --hyperlink -g";
       lsa = "ls -alh";
-
-      hx = "helix";
       lg = "lazygit";
       zj = "zellij";
     };

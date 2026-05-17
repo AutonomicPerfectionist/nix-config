@@ -97,6 +97,11 @@ in
       hardware.nvidia = {
         package = config.boot.kernelPackages.nvidiaPackages.legacy_580;
       };
+      nixpkgs.config = {
+        cuda.capabilities = [ "6.1" ];
+        # or the full form:
+        cudaCapabilities = [ "6.1" ];
+      };
     })
   ]);
 

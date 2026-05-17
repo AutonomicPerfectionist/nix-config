@@ -20,6 +20,14 @@ let
 
   llamaVersion = "8983";
 
+  # Re-instantiate a cuda pkgs that inherits cudaCapabilities from the host nixpkgs config
+  pkgsCuda = import pkgs.path {
+    inherit (pkgs) system;
+    config = pkgs.config // {
+      cudaSupport = true;
+    };
+  };
+
   # Select the correct backend variant
   llamaBasePkg =
     if useCuda then pkgs.pkgsCuda.llama-cpp
@@ -49,6 +57,7 @@ let
 
         (cmakeBool "GGML_CPU_ALL_VARIANTS" true)
         (cmakeBool "GGML_BACKEND_DL"       true)
+        (cmakeBool "GGML_CUDA_FA" (useCuda && lib.any (c: lib.versionAtLeast c "7.5") (pkgsCuda.config.cudaCapabilities or [])))
         (cmakeBool "GGML_RPC"       true)
         
         

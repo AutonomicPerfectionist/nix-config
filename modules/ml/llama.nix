@@ -32,7 +32,7 @@ let
   llamaBasePkg =
     if useCuda then pkgs.pkgsCuda.llama-cpp
     else if useRocm then pkgs.llama-cpp-rocm
-    else if useSycl then pkgs.llama-cpp-sycl
+    else if useSycl then pkgs.llama-cpp-vulkan
     else pkgs.llama-cpp;
 
   # Probe the host platform's ISA feature set once

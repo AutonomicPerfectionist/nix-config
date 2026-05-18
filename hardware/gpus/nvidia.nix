@@ -87,7 +87,13 @@ in
 
       # Card-specific configurations
       hardware.nvidia = {
-        package = config.boot.kernelPackages.nvidiaPackages.legacy_390;
+        package = config.boot.kernelPackages.nvidiaPackages.legacy_580;
+      };
+
+      nixpkgs.config = {
+        cuda.capabilities = [ "5.2" ];
+        # or the full form:
+        cudaCapabilities = [ "5.2" ];
       };
     })
 

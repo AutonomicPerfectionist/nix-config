@@ -89,6 +89,12 @@ in
       default = "";
       description = "Path to the GGUF model file.";
     };
+
+    # RPC server service for llama-cpp
+    rpcServer = {
+      enable = lib.mkEnableOption "rpc-server (binary from llama-cpp) auto-start service";
+    };
+
   };
 
   
@@ -106,25 +112,38 @@ in
           message = "services.llama.model must be set when enabling the service.";
         }
       ];
-  
+   
       systemd.services.llama = {
         description = "llama.cpp inference server";
-  
+   
         wantedBy = [ "multi-user.target" ];
-  
+   
         after = [ "network.target" ];
-  
+   
         serviceConfig = {
           Type = "simple";
-  
+   
           ExecStart = ''
             ${cfg.package}/bin/llama-server \
               --model ${cfg.model} \
               --port ${toString cfg.port}
           '';
-  
+   
           Restart = "on-failure";
-  
+   
+          DynamicUser = true;
+        };
+      };
+    })
+    (lib.mkIf cfg.rpcServer.enable {
+      systemd.services.rpc-server = {
+        description = "llama-cpp RPC server";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "network.target" ];
+        serviceConfig = {
+          Type = "simple";
+          ExecStart = "${cfg.package}/bin/rpc-server --host 0.0.0.0";
+          Restart = "on-failure";
           DynamicUser = true;
         };
       };

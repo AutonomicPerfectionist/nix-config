@@ -124,6 +124,8 @@
 
   # Enable the OpenSSH daemon.
   services.openssh.enable = true;
+  services.llama.rpcServer.enable = true;
+
   services.openssh.settings = {
     X11Forwarding = true;
   };

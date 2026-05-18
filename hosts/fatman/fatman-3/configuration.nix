@@ -39,6 +39,7 @@ fileSystems."/nix" = {
   hardware.gpu.amd.enable = true;
   enableRocmSupport = true;
 
+  services.llama.rpcServer.enable = true;
   hardware.infiniband.guids = [
     "0x001175000073bbd6"
   ];

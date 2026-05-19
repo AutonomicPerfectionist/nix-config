@@ -71,6 +71,8 @@ in
     glow
     zoxide
     lazygit
+    difftastic
+    delta
     dust
     procs
     yazi
@@ -107,17 +109,51 @@ in
   # Delta is a prettier diff tool with good git integration
   programs.delta.enable = true;
   programs.delta.enableGitIntegration = true;
+
+  # Lazygit semantic diff integration config
+  xdg.configFile."lazygit/config.yml".text = ''
+    customCommands:
+      - key: "D"
+        context: "files"
+        command: "git diff --ext-diff -- {{.SelectedFile.Name}}"
+        output: terminal
+        description: "Semantic diff (difftastic)"
+
+      - key: "<c-d>"
+        context: "commits"
+        command: "git -c diff.external=difft show {{.SelectedCommit.Sha}}"
+        output: terminal
+        description: "Semantic commit diff"
+  '';
+
   programs.git.enable = true;
   programs.git.settings = {
     user.name = "Branden Butler";
     user.email = "bwtbutler@hotmail.com";
+
+    # Better diff heuristics for refactors/moved code
+    diff = {
+      algorithm = "histogram";
+      colorMoved = "default";
+    };
+
+    # Semantic diff aliases using difftastic
     alias = {
       co = "checkout";
       st = "status";
       br = "branch";
       cm = "commit";
       sd = "-c delta.features=side-by-side diff";
+
+      # Semantic diffs
+      dft = "-c diff.external=difft diff";
+      sft = "-c diff.external=difft show";
+
+      # Ignore whitespace-only changes
+      dw = "diff -w";
+      sw = "show -w";
     };
+
     init.defaultBranch = "main";
   };
 
@@ -267,6 +303,8 @@ Search:
 Git:
   lazygit        → full git UI
   git            → CLI (use sparingly)
+  git dft        → semantic diff (difftastic)
+  git sft        → semantic show (difftastic)
 
 System:
   btop           → system monitor

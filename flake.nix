@@ -30,6 +30,7 @@
     nixos-facter-modules.url = "github:numtide/nixos-facter-modules";
 
     sycl.url = "github:MordragT/nixos";
+    llm-agents.url = "github:numtide/llm-agents.nix";
   };
 
   outputs =

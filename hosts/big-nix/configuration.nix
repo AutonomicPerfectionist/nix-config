@@ -12,6 +12,7 @@
     ../../modules/nix-settings.nix
     ../../modules/avahi.nix
     ../../modules/compute.nix
+    ../../modules/common/overlays.nix
     ../../modules/cluster/mounts.nix
     ../../modules/cluster/management.nix
     ../../modules/cluster/distributed.nix
@@ -19,7 +20,14 @@
     flake-inputs.home-manager.nixosModules.default
     ../../modules/ml/llama.nix
     ../../modules/distributed-builds.nix
+    # ../../modules/ml/ai-agent/ai-agent.nix
+    # ../../modules/ml/ai-agent/omp.nix
+    # ../../modules/ml/ai-agent/vector-memory.nix
 
+    # ({ pkgs, ... }: {
+    #   services.aiAgent.ompPackage =
+    #     flake-inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.omp;
+    # })
     # Users
     
     ../../users/branden
@@ -101,7 +109,19 @@
     htop
     xclip
     opencode
+    llm-agents.omp
   ];
+
+
+  # services.aiAgent = {
+  #   enable            = true;
+  #   orchestratorUrl   = "http://192.168.1.10:8080";
+  #   orchestratorModel = "minimax-m2-7";
+  #   codingAgentUrl    = "http://192.168.1.10:8081";
+  #   codingAgentModel  = "qwen2.5-coder-32b-Q4_K_M";
+  #   users             = [ "branden" ];
+  #   memory.projectRoots = [ "/mnt/cluster/dev/git/SuperScalar-PipeInfer" ];
+  # };
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.

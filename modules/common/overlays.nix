@@ -161,6 +161,7 @@ in
       (lib.optionals config.scl.overlays.rocm-amd [ rocmOverlay ])
       [ noHaddockOverlay ]
       [ rocmLlvmOverlay  ]
+      [ flake-inputs.llm-agents.overlays.default ]
     ];
   };
 }

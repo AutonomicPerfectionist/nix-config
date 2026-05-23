@@ -109,6 +109,18 @@ in
         cudaCapabilities = [ "6.1" ];
       };
     })
+    (mkIf (builtins.elem "tesla_v100" cfg.hardware.gpu.nvidia.cards) {
+    
+      # Card-specific configurations
+      hardware.nvidia = {
+        package = config.boot.kernelPackages.nvidiaPackages.legacy_580;
+      };
+      nixpkgs.config = {
+        cuda.capabilities = [ "7.0" ];
+        # or the full form:
+        cudaCapabilities = [ "7.0" ];
+      };
+    })
   ]);
 
 }

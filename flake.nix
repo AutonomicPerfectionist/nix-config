@@ -151,6 +151,14 @@
           ];
         };
 
+        fatman-1 = mkConfiguration {
+          system = "x86_64-linux";
+          modules = [
+            ./hosts/fatman/fatman-1/configuration.nix
+            inputs.disko.nixosModules.disko
+            inputs.agenix.nixosModules.default
+          ];
+        };
         fatman-2 = mkConfiguration {
           system = "x86_64-linux";
           modules = [

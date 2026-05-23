@@ -109,6 +109,15 @@
           ];
         };
 
+        thunder-budget-1 = mkConfiguration {
+          system = "x86_64-linux";
+          modules = [
+            ./hosts/thunder-budget/thunder-budget-1/configuration.nix
+            inputs.disko.nixosModules.disko
+            inputs.agenix.nixosModules.default
+          ];
+        };
+
         thunder-budget-2 = mkConfiguration {
           system = "x86_64-linux";
           modules = [

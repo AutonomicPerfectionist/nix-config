@@ -209,15 +209,6 @@ in
     enableZshIntegration = true;
   };
 
-  programs.atuin = {
-    enable = true;
-    enableZshIntegration = true;
-    settings = {
-      style = "compact";
-      enter_accept = true;
-      inline_height = 20;
-    };
-  };
 
   programs.zsh = {
     enable = true;

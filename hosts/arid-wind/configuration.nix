@@ -11,6 +11,7 @@
     ./hardware-configuration.nix
     ../../modules/nix-settings.nix
     ../../modules/compute.nix
+    ../../modules/common/overlays.nix
     ../../modules/ml/llama.nix
     ../../modules/cluster/mounts.nix
     ../../modules/cluster/management.nix
@@ -125,6 +126,7 @@
   # Enable the OpenSSH daemon.
   services.openssh.enable = true;
   services.llama.rpcServer.enable = true;
+  services.llama.useCustomSource = true;
 
   services.openssh.settings = {
     X11Forwarding = true;

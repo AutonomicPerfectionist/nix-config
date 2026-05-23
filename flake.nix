@@ -31,6 +31,10 @@
 
     sycl.url = "github:MordragT/nixos";
     llm-agents.url = "github:numtide/llm-agents.nix";
+    llama-cpp-fork = {
+      url = "github:rgerganov/llama.cpp/rpc-async";
+      flake = false;
+    };
   };
 
   outputs =
@@ -105,6 +109,14 @@
           ];
         };
 
+        thunder-budget-2 = mkConfiguration {
+          system = "x86_64-linux";
+          modules = [
+            ./hosts/thunder-budget/thunder-budget-2/configuration.nix
+            inputs.disko.nixosModules.disko
+            inputs.agenix.nixosModules.default
+          ];
+        };
         thunder-budget-3 = mkConfiguration {
           system = "x86_64-linux";
           modules = [

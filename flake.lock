@@ -581,6 +581,23 @@
         "type": "github"
       }
     },
+    "llama-cpp-fork": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1776682607,
+        "narHash": "sha256-H8YRMK++wiRoVFhyTRu2dypDB39OTo9NbyAcHPMbCK0=",
+        "owner": "rgerganov",
+        "repo": "llama.cpp",
+        "rev": "e2871a95c812bc4f49f050cac8801ebfe6225484",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rgerganov",
+        "ref": "rpc-async",
+        "repo": "llama.cpp",
+        "type": "github"
+      }
+    },
     "llm-agents": {
       "inputs": {
         "blueprint": "blueprint",
@@ -1015,6 +1032,7 @@
         "agenix": "agenix",
         "disko": "disko",
         "home-manager": "home-manager_2",
+        "llama-cpp-fork": "llama-cpp-fork",
         "llm-agents": "llm-agents",
         "nixos-cli": "nixos-cli",
         "nixos-facter-modules": "nixos-facter-modules",

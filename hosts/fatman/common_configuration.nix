@@ -23,6 +23,7 @@
 
     # Users
     ../../users/branden
+    ../../users/remotebuild
   ];
 
   users.users.root.openssh.authorizedKeys.keys = [

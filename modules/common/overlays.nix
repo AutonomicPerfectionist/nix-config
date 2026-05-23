@@ -1,8 +1,23 @@
+# overlays.nix
+#
+# NixOS module providing GPU compute overlays for:
+#   • Intel Arc/Xe  – SYCL via flake-inputs.sycl   (sycl-intel, default on)
+#   • AMD           – ROCm from nixpkgs             (rocm-amd,   default off)
+#
+# Also provides the optional rgerganov/llama.cpp fork swap controlled by
+# services.llama.useCustomSource.
+#
+# IMPORTANT – custom source setup:
+#   Add the fork to your flake.nix inputs so Nix pins and hashes it for you:
+#
+#     inputs.llama-cpp-fork = {
+#       url   = "github:rgerganov/llama.cpp/rpc-async";
+#       flake = false;   # it's a plain source tree, not a flake
+#     };
+#
+#   Then pass it through to this module via specialArgs / extraModules so
+#   flake-inputs.llama-cpp-fork is available here.
 {
-  # This module provides GPU compute overlays for Intel SYCL and AMD ROCm stacks.
-  # Enable sycl-intel for Intel Arc/Xe GPUs with llama-cpp-sycl, or
-  # rocm-amd for AMD GPUs with llama-cpp-rocm.
-
   config,
   lib,
   pkgs,
@@ -10,8 +25,10 @@
   ...
 }:
 let
-  # Inherit Intel userspace packages at consistent versions across the system closure.
-  # This does NOT modify kernel drivers, only Nixpkgs-level packages.
+  # ── Intel overlay ────────────────────────────────────────────────────────
+  # Re-export Level Zero and the Intel compute runtime from prev so all
+  # packages in the closure share the same ABI.  Does NOT touch kernel
+  # drivers — only Nixpkgs-level userspace packages.
   intelOverlay = final: prev: {
     inherit (prev)
       level-zero
@@ -20,22 +37,27 @@ let
       ;
   };
 
-  # Build llama-cpp-sycl against the same pkgs set so it shares Level Zero and
-  # compute runtime ABI. Also patches binaries with proper runpaths.
+  # ── SYCL overlay ─────────────────────────────────────────────────────────
+  # Builds llama-cpp-sycl from flake-inputs.sycl against the same Level Zero
+  # and compute-runtime versions pinned by intelOverlay, then patches the
+  # resulting ELF binaries so they can find the runtime libraries at runtime.
   syclOverlay = final: prev: {
     llama-cpp-sycl = flake-inputs.sycl.packages.${prev.system}.llama-cpp-sycl.overrideAttrs (old: {
-      cmakeFlags = (old.cmakeFlags or [ ]) ++ [
+      cmakeFlags = (old.cmakeFlags or []) ++ [
         "-DGGML_RPC=ON"
       ];
 
-      nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ prev.addDriverRunpath ];
+      nativeBuildInputs = (old.nativeBuildInputs or []) ++ [
+        prev.addDriverRunpath
+      ];
 
-      buildInputs = (old.buildInputs or [ ]) ++ [
+      buildInputs = (old.buildInputs or []) ++ [
         prev.level-zero
         prev.intel-compute-runtime
       ];
 
-      # Add runpath to built binaries so they can find the compute runtime libraries
+      # Stamp runpaths on every ELF binary so the loader finds the compute
+      # runtime libraries without requiring LD_LIBRARY_PATH.
       postFixup = (old.postFixup or "") + ''
         for bin in $out/bin/*; do
           if [ -x "$bin" ] && file "$bin" | grep -q ELF; then
@@ -46,40 +68,49 @@ let
     });
   };
 
-  # Enable RPC support for distributed llama.cpp workloads
+  # ── ROCm overlay ─────────────────────────────────────────────────────────
+  # Enables the RPC transport in the upstream nixpkgs ROCm build.
   rocmOverlay = final: prev: {
     llama-cpp-rocm = prev.llama-cpp-rocm.overrideAttrs (old: {
-      cmakeFlags = (old.cmakeFlags or [ ]) ++ [
+      cmakeFlags = (old.cmakeFlags or []) ++ [
         "-DGGML_RPC=ON"
       ];
     });
   };
 
+  # ── Haddock overlay ──────────────────────────────────────────────────────
+  # Disabling Haddock documentation generation shaves significant build time
+  # from any Haskell packages pulled in transitively (e.g. by pandoc).
   noHaddockOverlay = final: prev: {
     haskellPackages = prev.haskellPackages.override {
       overrides = hfinal: hprev: {
         mkDerivation = args:
-          hprev.mkDerivation (args // {
-            doHaddock = false;
-          });
+          hprev.mkDerivation (args // { doHaddock = false; });
       };
     };
   };
 
-  # Rebuild ROCm's LLVM fork respecting the host platform's CPU architecture,
-  # preventing BMI2/AVX2 instructions from being emitted on hosts that lack them.
-  # Uses final.stdenv.hostPlatform to derive march flags so this works generically
-  # across any host, not just ivybridge.
+  # ── ROCm LLVM overlay ────────────────────────────────────────────────────
+  # ROCm ships its own LLVM fork.  The upstream nixpkgs derivation hard-codes
+  # march=skylake / mtune=znver3 which emits AVX2/BMI2 instructions that crash
+  # on Ivy Bridge and similar hosts.  This overlay rebuilds that LLVM using
+  # march flags derived from the actual host platform, making the ROCm stack
+  # portable across x86-64 micro-architecture levels.
+  #
+  # NOTE: this overlay unconditionally rebuilds ROCm's LLVM even when the
+  # ROCm stack is not in use.  If compile time is a concern you can guard it:
+  #   (lib.optionals config.scl.overlays.rocm-amd [ rocmLlvmOverlay ])
   rocmLlvmOverlay = final: prev:
     let
       hostArch =
         final.stdenv.hostPlatform.gcc.arch
           or final.stdenv.hostPlatform.parsed.cpu.name;
-  
+
       marchFlag = "-march=${hostArch}";
-  
+
+      # Suppress all post-AVX extensions when the host doesn't advertise them.
       noExtensionFlags = lib.optionals
-        (!(builtins.elem "avx2" (final.stdenv.hostPlatform.gcc.isa or [ ])))
+        (!(builtins.elem "avx2" (final.stdenv.hostPlatform.gcc.isa or [])))
         [
           "-mno-avx2"
           "-mno-bmi2"
@@ -90,18 +121,18 @@ let
           "-mno-rdrnd"
           "-mno-f16c"
         ];
-  
+
       hostCFlags = lib.concatStringsSep " " ([ marchFlag ] ++ noExtensionFlags);
-  
-      # Strip hardcoded skylake/znver3 flags from NIX_CFLAGS_COMPILE in env
-      # and replace with host-appropriate flags.
+
+      # Strip hard-coded march/mtune flags from a derivation's
+      # NIX_CFLAGS_COMPILE and replace them with the host-appropriate ones.
       patchCFlags = pkg: pkg.overrideAttrs (old: {
-        env = (old.env or { }) // {
+        env = (old.env or {}) // {
           NIX_CFLAGS_COMPILE = lib.pipe (old.env.NIX_CFLAGS_COMPILE or "") [
             (lib.splitString " ")
             (builtins.filter (f:
               f != "-march=skylake" &&
-              f != "-mtune=znver3" &&
+              f != "-mtune=znver3"  &&
               f != ""
             ))
             (flags: flags ++ [ hostCFlags ])
@@ -109,7 +140,9 @@ let
           ];
         };
       });
-  
+
+      # Patch the libstdcxxClang wrapper so the host flags propagate into
+      # all downstream compilations that use this compiler.
       llvmPackages_22_patched = prev.llvmPackages_22 // {
         override = args:
           let
@@ -136,32 +169,86 @@ let
                 llvmPackages_22 = llvmPackages_22_patched;
               })
               (prev.path + "/pkgs/development/rocm-modules/llvm/default.nix")
-              { };
+              {};
           in
           base // {
-            llvm = patchCFlags base.llvm;
-            lld = patchCFlags base.lld;
-            clang-unwrapped = patchCFlags base.clang-unwrapped;
+            llvm              = patchCFlags base.llvm;
+            lld               = patchCFlags base.lld;
+            clang-unwrapped   = patchCFlags base.clang-unwrapped;
           }
         );
       });
     };
 
+  # ── Custom source overlay ─────────────────────────────────────────────────
+  # When services.llama.useCustomSource is true, replace every llama-cpp
+  # variant's src with the rgerganov fork.  Using a flake input means Nix
+  # pins the exact commit and hash in flake.lock — no manual sha256 needed
+  # and pure evaluation works correctly.
+  #
+  # builtins.fetchGit was used here previously but has two problems:
+  #   1. It does NOT accept a `sha256` argument (that's fetchFromGitHub).
+  #   2. Passing a branch name as `rev` fails in --pure-eval / flake mode.
+  #
+  # The fix: declare the fork in flake.nix (see comment at the top of this
+  # file) and reference flake-inputs.llama-cpp-fork as the src below.
+  customSourceOverlay = final: prev:
+  let
+    forkSrc = flake-inputs.llama-cpp-fork;
+
+    overrideFork = pkg: pkg.overrideAttrs (_: {
+      src = forkSrc;
+
+      npmDepsHash =
+        "sha256-RAFtsbBGBjteCt5yXhrmHL39rIDJMCFBETgzId2eRRk=";
+    });
+
+  in
+  lib.optionalAttrs config.services.llama.useCustomSource {
+
+    llama-cpp =
+      overrideFork prev.llama-cpp;
+
+    llama-cpp-rocm =
+      overrideFork prev.llama-cpp-rocm;
+
+    llama-cpp-vulkan =
+      overrideFork prev.llama-cpp-vulkan;
+
+    # IMPORTANT:
+    # sycl package comes from flake-inputs.sycl, so override THAT package
+    # directly rather than rebuilding from plain llama-cpp.
+    llama-cpp-sycl =
+      overrideFork prev.llama-cpp-sycl;
+  };
 in
 {
-  # Enable sycl-intel for Intel GPUs (default), rocm-amd for AMD GPUs
+  # ── Options ────────────────────────────────────────────────────────────────
+
   options.scl.overlays = {
-    sycl-intel = lib.mkEnableOption "SYCL + Intel overlay stack" // { default = true; };
-    rocm-amd = lib.mkEnableOption "ROCm + AMD overlay stack" // { default = false; };
+    sycl-intel = lib.mkEnableOption "SYCL + Intel GPU overlay stack" // { default = true;  };
+    rocm-amd   = lib.mkEnableOption "ROCm  + AMD  GPU overlay stack" // { default = false; };
   };
 
-  config = {
-    nixpkgs.overlays = lib.concatLists [
-      (lib.optionals config.scl.overlays.sycl-intel [ intelOverlay syclOverlay ])
-      (lib.optionals config.scl.overlays.rocm-amd [ rocmOverlay ])
-      [ noHaddockOverlay ]
-      [ rocmLlvmOverlay  ]
-      [ flake-inputs.llm-agents.overlays.default ]
-    ];
-  };
+  # ── Config ─────────────────────────────────────────────────────────────────
+
+  config.nixpkgs.overlays = lib.concatLists [
+    # Intel SYCL stack (Level Zero ABI pin + llama-cpp-sycl build).
+    (lib.optionals config.scl.overlays.sycl-intel [ intelOverlay syclOverlay ])
+
+    # AMD ROCm stack (llama-cpp-rocm with RPC + patched LLVM).
+    # rocmLlvmOverlay is kept separate so it can be toggled independently
+    # without affecting the ROCm package overlay.
+    (lib.optionals config.scl.overlays.rocm-amd  [ rocmOverlay rocmLlvmOverlay ])
+
+    # Global overlays applied regardless of GPU selection.
+    [ noHaddockOverlay ]
+
+    # llm-agents nixpkgs overlay from its own flake input.
+    [ flake-inputs.llm-agents.overlays.default ]
+
+    # Source swap: replaces every llama-cpp variant with the rgerganov fork
+    # when services.llama.useCustomSource = true.
+    [ customSourceOverlay ]
+  ];
 }

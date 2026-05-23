@@ -32,6 +32,7 @@
   hardware.gpu.nvidia.cards = [ "tesla_p40" ];
   # enableRocmSupport = true;
 
+  services.llama.useCustomSource = true;
   services.llama.rpcServer.enable = true;
   hardware.infiniband.guids = [
     "0x0011750000707982"

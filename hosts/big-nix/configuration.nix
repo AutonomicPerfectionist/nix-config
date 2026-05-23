@@ -60,6 +60,8 @@
   ];
 
   enableCudaSupport = true;
+  services.llama.useCustomSource = true;
+  services.llama.rpcServer.enable = true;
 
   networking.hostName = "big-nix";
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.

@@ -18,6 +18,23 @@
       sshUser = "remotebuild";
       sshKey = "/root/.ssh/remotebuild";
       system = pkgs.stdenv.hostPlatform.system;
+      maxJobs = 16;
+      supportedFeatures = [ "nixos-test" "big-parallel" "kvm" "gccarch-ivybridge"];
+    }
+
+    {
+      hostName = "thunder-budget-2.local";
+      sshUser = "remotebuild";
+      sshKey = "/root/.ssh/remotebuild";
+      system = pkgs.stdenv.hostPlatform.system;
+      maxJobs = 16;
+      supportedFeatures = [ "nixos-test" "big-parallel" "kvm" "gccarch-ivybridge"];
+    }
+    {
+      hostName = "fatman-2.local";
+      sshUser = "remotebuild";
+      sshKey = "/root/.ssh/remotebuild";
+      system = pkgs.stdenv.hostPlatform.system;
       maxJobs = 8;
       supportedFeatures = [ "nixos-test" "big-parallel" "kvm" "gccarch-ivybridge"];
     }

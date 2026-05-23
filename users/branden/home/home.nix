@@ -77,7 +77,6 @@ in
     procs
     yazi
     ast-grep
-    atuin
     just
     zellij
 

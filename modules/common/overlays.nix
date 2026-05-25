@@ -103,8 +103,13 @@ let
   rocmLlvmOverlay = final: prev:
     let
       hostArch =
-        final.stdenv.hostPlatform.gcc.arch
-          or final.stdenv.hostPlatform.parsed.cpu.name;
+        let
+          gccArch = final.stdenv.hostPlatform.gcc.arch or null;
+          cpuName = final.stdenv.hostPlatform.parsed.cpu.name;
+        in
+        if gccArch != null && gccArch != "x86_64" then gccArch
+        else if cpuName != null && cpuName != "x86_64" then cpuName
+        else "ivybridge";
 
       marchFlag = "-march=${hostArch}";
 
@@ -221,6 +226,21 @@ let
     llama-cpp-sycl =
       overrideFork prev.llama-cpp-sycl;
   };
+ # ── ROCm GPU targets overlay ───────────────────────────────────────────────
+  # Restricts rocmPackages.clr to only build for the specified GPU
+  # architectures.  Changes to rocmPackages propagate to pkgsRocm (the
+  # nixpkgs set with rocmSupport=true), so pkgsRocm.llama-cpp picks up
+  # the restricted target set automatically.
+  rocmGpuTargetsOverlay =
+    lib.optionalAttrs (config.scl.overlays.rocm-gpu-targets != [])
+      (final: prev: {
+        rocmPackages = prev.rocmPackages.overrideScope (scopeFinal: scopePrev: {
+          clr = scopePrev.clr.override {
+            localGpuTargets = config.scl.overlays.rocm-gpu-targets;
+          };
+        });
+      });
+
 in
 {
   # ── Options ────────────────────────────────────────────────────────────────
@@ -228,6 +248,14 @@ in
   options.scl.overlays = {
     sycl-intel = lib.mkEnableOption "SYCL + Intel GPU overlay stack" // { default = true;  };
     rocm-amd   = lib.mkEnableOption "ROCm  + AMD  GPU overlay stack" // { default = false; };
+    rocm-gpu-targets = lib.mkOption {
+      type        = lib.types.listOf lib.types.str;
+      default     = [ "gfx906" ];
+      description = ''
+        ROCm GPU target architectures to build into pkgsRocm.
+        gfx1030 = RX 6xxx / W6800, gfx906 = MI50 / MI60 / MI210 / MI250.
+      '';
+    };
   };
 
   # ── Config ─────────────────────────────────────────────────────────────────
@@ -240,6 +268,9 @@ in
     # rocmLlvmOverlay is kept separate so it can be toggled independently
     # without affecting the ROCm package overlay.
     (lib.optionals config.scl.overlays.rocm-amd  [ rocmOverlay rocmLlvmOverlay ])
+
+    # ROCm GPU target architectures (restricts clr + downstream pkgsRocm).
+    (lib.optionals (config.scl.overlays.rocm-gpu-targets != []) [ rocmGpuTargetsOverlay ])
 
     # Global overlays applied regardless of GPU selection.
     [ noHaddockOverlay ]

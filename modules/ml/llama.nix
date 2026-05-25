@@ -23,26 +23,39 @@ let
   useSycl = config.hardware.gpu.intel.enable or false;
 
   # ── CUDA pkgs re-instantiation ───────────────────────────────────────────
-  # We need a pkgs set with cudaSupport=true to pull llama-cpp's CUDA variant.
-  # Inheriting cudaCapabilities from the host config keeps capability-gated
-  # flags (e.g. flash-attention) consistent with the rest of the system.
-  pkgsCuda = import pkgs.path {
-    inherit (pkgs) system;
+   # We need a pkgs set with cudaSupport=true to pull llama-cpp's CUDA variant.
+   # Inheriting cudaCapabilities from the host config keeps capability-gated
+   # flags (e.g. flash-attention) consistent with the rest of the system.
+   pkgsCuda = import pkgs.path {
+     inherit (pkgs) system;
 
-    config = pkgs.config // {
-      cudaSupport = true;
-    };
+     config = pkgs.config // {
+       cudaSupport = true;
+     };
 
-    overlays = config.nixpkgs.overlays;
-  };
+     overlays = config.nixpkgs.overlays;
+   };
+
+   # ── ROCm pkgs re-instantiation ───────────────────────────────────────────
+   # We need a pkgs set with rocmSupport=true to pull pkgsRocm.llama-cpp
+   # (which picks up rocmPackages overlays like rocm-gpu-targets).
+   pkgsRocm = import pkgs.path {
+     inherit (pkgs) system;
+
+     config = pkgs.config // {
+       rocmSupport = true;
+     };
+
+     overlays = config.nixpkgs.overlays;
+   };
 
   # ── Backend package selection ────────────────────────────────────────────
   # Priority: CUDA > ROCm > SYCL > CPU.
-  # llama-cpp-rocm and llama-cpp-sycl are injected by the overlays in
-  # overlays.nix; they don't exist in upstream nixpkgs under those names.
+  # llama-cpp-rocm is nixpkgs' ROCm variant; llama-cpp-sycl is injected
+  # by the syclOverlay in overlays.nix.
   llamaBasePkg =
     if      useCuda then pkgsCuda.llama-cpp   # CUDA variant from re-instantiated set
-    else if useRocm then pkgs.llama-cpp-rocm  # ROCm variant from rocmOverlay
+    else if useRocm then pkgsRocm.llama-cpp   # ROCm variant from pkgsRocm (picks up rocmGpuTargetsOverlay)
     else if useSycl then pkgs.llama-cpp-sycl  # SYCL/Intel variant from syclOverlay
     else                 pkgs.llama-cpp;      # CPU-only fallback
 

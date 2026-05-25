@@ -13,10 +13,10 @@
 
   config = lib.mkMerge [
     (lib.mkIf config.enableCudaSupport {
-      nixpkgs.config.cudaSupport = true;
+      # nixpkgs.config.cudaSupport = true;
     })
     (lib.mkIf config.enableRocmSupport {
-      nixpkgs.config.rocmSupport = true;
+      # nixpkgs.config.rocmSupport = true;
     })
   ];
 }

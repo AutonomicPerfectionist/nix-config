@@ -48,27 +48,17 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  # Kernel 6.12 has patches for nvidia driver 390,
-  # newer kernels don't
-  boot.kernelPackages = pkgs.linuxPackages_6_12;
+  boot.kernelPackages = pkgs.linuxPackages_latest;
 
   # Additional hardware and driver configuration
   hardware.graphics.enable = true;
-  hardware.gpu.nvidia.enable = true;
-  hardware.gpu.nvidia.cards = [
-    "quadro_m6000"
-  ];
+  hardware.gpu.intel.enable = true;
 
-  enableCudaSupport = true;
   services.llama.useCustomSource = true;
   services.llama.rpcServer.enable = true;
 
   networking.hostName = "big-nix";
-  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
-  # Configure network proxy if necessary
-  # networking.proxy.default = "http://user:password@proxy:port/";
-  # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
 
   # Enable networking
   networking.networkmanager.enable = true;

@@ -29,7 +29,7 @@
 
   hardware.graphics.enable = true;
   hardware.gpu.nvidia.enable = true;
-  hardware.gpu.nvidia.cards = [ "tesla_p40" ];
+  hardware.gpu.nvidia.cards = [ "tesla_p40" "quadro_m6000"];
   # enableRocmSupport = true;
 
   services.llama.useCustomSource = true;

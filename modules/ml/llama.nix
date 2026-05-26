@@ -56,7 +56,7 @@ let
   llamaBasePkg =
     if      useCuda then pkgsCuda.llama-cpp   # CUDA variant from re-instantiated set
     else if useRocm then pkgsRocm.llama-cpp   # ROCm variant from pkgsRocm (picks up rocmGpuTargetsOverlay)
-    else if useSycl then pkgs.llama-cpp-sycl  # SYCL/Intel variant from syclOverlay
+    else if useSycl then pkgs.llama-cpp-vulkan  # SYCL/Intel variant from syclOverlay
     else                 pkgs.llama-cpp;      # CPU-only fallback
 
   # ── Host ISA probe ───────────────────────────────────────────────────────

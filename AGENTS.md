@@ -42,17 +42,17 @@ nix build .#nixosConfigurations.hostname.pkgs.system
 
 ### Nix formatting
 ```bash
-# Format all Nix files using nixfmt
-for f in $(find . -name "*.nix" -type f); do nixfmt "$f" > /tmp/fmt_out && mv /tmp/fmt_out "$f"; done
+# Format all Nix files using nixfmt (modifies files in-place)
+for f in $(find . -name "*.nix" -type f); do nixfmt "$f"; done
 
-# Format specific file using stdin
-nixfmt path/to/file.nix > /tmp/fmt_out && mv /tmp/fmt_out path/to/file.nix
+# Format a specific file (modifies in-place)
+nixfmt path/to/file.nix
 
 # Check which files need formatting
 find . -name "*.nix" -type f -exec nixfmt --check {} \; 2>&1 | grep -v "^$"
 ```
 
-**Note**: The `nix fmt` command via `flake.x86_64-linux.formatter` is not available. Use `nixfmt` directly from PATH. The `--write` flag is also not supported; use stdin/stdout redirection.
+**WARNING**: `nixfmt` modifies files in-place and writes nothing to stdout. **Never** redirect stdout to a file and mv it back — this will truncate your file to empty. Do not use `> /tmp/fmt_out && mv /tmp/fmt_out`. Do not use the `--write` flag (not supported).
 
 ### Nix language server (nil)
 ```bash

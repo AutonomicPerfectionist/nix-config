@@ -176,6 +176,14 @@
             inputs.agenix.nixosModules.default
           ];
         };
+        fatman-4 = mkConfiguration {
+          system = "x86_64-linux";
+          modules = [
+            ./hosts/fatman/fatman-4/configuration.nix
+            inputs.disko.nixosModules.disko
+            inputs.agenix.nixosModules.default
+          ];
+        };
 
         king-blue = mkConfiguration {
           system = "x86_64-linux";

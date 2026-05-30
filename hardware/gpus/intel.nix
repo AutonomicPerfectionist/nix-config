@@ -57,7 +57,6 @@ in
         intel-compute-runtime # OpenCL (NEO) + Level Zero for Arc/Xe
         intel-compute-runtime.drivers
         level-zero
-        intel-oneapi.base
         intel-graphics-compiler
         sycl-info
         clinfo

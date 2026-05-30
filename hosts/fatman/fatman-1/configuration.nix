@@ -35,7 +35,7 @@
   services.llama.useCustomSource = true;
   services.llama.rpcServer.enable = true;
   hardware.infiniband.guids = [
-    "0x0011750000707982"
+    "0x00117500007090a2"
   ];
 
   boot.kernelModules = [

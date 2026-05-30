@@ -127,6 +127,8 @@
   services.openssh.enable = true;
   services.llama.rpcServer.enable = true;
   services.llama.useCustomSource = true;
+  # Vulkan apparently mitigates the memory leak
+  services.llama.preferVulkan = true;
 
   services.openssh.settings = {
     X11Forwarding = true;

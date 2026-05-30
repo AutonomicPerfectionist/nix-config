@@ -50,14 +50,15 @@ let
    };
 
   # ── Backend package selection ────────────────────────────────────────────
-  # Priority: CUDA > ROCm > SYCL > CPU.
+  # Priority: preferVulkan > CUDA > ROCm > SYCL > CPU.
   # llama-cpp-rocm is nixpkgs' ROCm variant; llama-cpp-sycl is injected
   # by the syclOverlay in overlays.nix.
   llamaBasePkg =
-    if      useCuda then pkgsCuda.llama-cpp   # CUDA variant from re-instantiated set
-    else if useRocm then pkgsRocm.llama-cpp   # ROCm variant from pkgsRocm (picks up rocmGpuTargetsOverlay)
-    else if useSycl then pkgs.llama-cpp-vulkan  # SYCL/Intel variant from syclOverlay
-    else                 pkgs.llama-cpp;      # CPU-only fallback
+    if      cfg.preferVulkan then pkgs.llama-cpp-vulkan
+    else if useCuda          then pkgsCuda.llama-cpp   # CUDA variant from re-instantiated set
+    else if useRocm          then pkgsRocm.llama-cpp   # ROCm variant from pkgsRocm (picks up rocmGpuTargetsOverlay)
+    else if useSycl          then pkgs.llama-cpp-vulkan  # SYCL/Intel variant from syclOverlay
+    else                           pkgs.llama-cpp;      # CPU-only fallback
 
   # ── Host ISA probe ───────────────────────────────────────────────────────
   # gcc.isa is a list of ISA extensions the host platform advertises
@@ -111,6 +112,8 @@ in
     # is performed by an overlay in overlays.nix that reads this flag;
     # see the note there about adding the fork as a flake input.
     useCustomSource = lib.mkEnableOption "custom llama.cpp source (rgerganov/llama.cpp rpc-async fork)";
+
+    preferVulkan = lib.mkEnableOption "Vulkan backend for llama.cpp (overrides automatic GPU backend detection)";
 
     enable = lib.mkEnableOption "llama.cpp inference server";
 

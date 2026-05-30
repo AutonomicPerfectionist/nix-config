@@ -42,6 +42,8 @@ fileSystems."/nix" = {
   scl.overlays.rocm-amd = true;
   services.llama.useCustomSource = true;
   services.llama.rpcServer.enable = true;
+  # Vulkan mitigates the observed memory leak
+  services.llama.preferVulkan = true;
   hardware.infiniband.guids = [
     "0x001175000073bbd6"
   ];

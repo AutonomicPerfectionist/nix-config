@@ -3,6 +3,7 @@
   config,
   pkgs,
   flake-inputs,
+  zfs,
   ...
 }:
 {
@@ -20,6 +21,7 @@
     flake-inputs.home-manager.nixosModules.default
     ../../modules/ml/llama.nix
     ../../modules/distributed-builds.nix
+    ../../modules/zfs.nix
     # ../../modules/ml/ai-agent/ai-agent.nix
     # ../../modules/ml/ai-agent/omp.nix
     # ../../modules/ml/ai-agent/vector-memory.nix
@@ -48,7 +50,7 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot.kernelPackages = zfs.selectZfsCompatibleKernel { };
 
   # Additional hardware and driver configuration
   hardware.graphics.enable = true;
@@ -58,6 +60,10 @@
   services.llama.rpcServer.enable = true;
 
   networking.hostName = "big-nix";
+  # Needs to be unique among machines, used
+  # for zfs to prevent accidental imports
+  # on wrong machines
+  networking.hostId = "f036b686";
 
 
   # Enable networking

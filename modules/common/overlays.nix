@@ -205,7 +205,7 @@ let
       src = forkSrc;
 
       npmDepsHash =
-        "sha256-RAFtsbBGBjteCt5yXhrmHL39rIDJMCFBETgzId2eRRk=";
+        "sha256-Iyg8FpcTKf2UYHuK7mA3cTAqVaLcQPcS0YCa5Qf01Gc=";
     });
 
   in

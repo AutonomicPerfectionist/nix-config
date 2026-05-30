@@ -51,7 +51,6 @@ let
   driverPriority = [
     "legacy_470"
     "legacy_535"
-    "legacy_550"
     "legacy_580"
     "stable"
     "beta"
@@ -129,10 +128,10 @@ in
       package = nvidiaPackage;
 
       # Enable Nvidia settings menu
-      nvidiaSettings = mkIf config.hardware.graphics.enable true;
+      # nvidiaSettings = mkIf config.hardware.graphics.enable false;
 
       # Modesetting is required
-      modesetting.enable = true;
+      modesetting.enable = false;
 
       # Nvidia power management.
       # Experimental, and can cause sleep/suspend to fail.
@@ -149,34 +148,40 @@ in
       # Sometimes reduces performance,
       # but helps with TEARING (my mortal enemy)
       # forceFullCompositionPipeline = false;
+      nvidiaPersistenced = true;
+      gsp.enable = false;
+      # datacenter.enable = true;
     };
 
     # Load Nvidia driver for X and Wayland
     services.xserver.videoDrivers =
       mkIf config.hardware.graphics.enable [ "nvidia" ];
 
-    boot.extraModprobeConfig =
-      "options nvidia "
-      + lib.concatStringsSep " " [
+    boot.kernel.sysctl = {
+      "vm.min_free_kbytes" = 1048576;  # 1GB; tune to your system
+    };
+    # boot.extraModprobeConfig =
+    #   "options nvidia "
+    #   + lib.concatStringsSep " " [
 
-        # nvidia assume that by default your CPU does not support PAT,
-        # but this is effectively never the case in 2023
-        "NVreg_UsePageAttributeTable=1"
+    #     # nvidia assume that by default your CPU does not support PAT,
+    #     # but this is effectively never the case in 2023
+    #     "NVreg_UsePageAttributeTable=1"
 
-        # This may be a noop,
-        # but it's somewhat uncertain
-        "NVreg_EnablePCIeGen3=1"
+    #     # This may be a noop,
+    #     # but it's somewhat uncertain
+    #     "NVreg_EnablePCIeGen3=1"
 
-        # This is sometimes needed for ddc/ci support, see
-        # https://www.ddcutil.com/nvidia/
-        #
-        # Current monitor does not support it,
-        # but this is useful for the future
-        "NVreg_RegistryDwords=RMUseSwI2c=0x01;RMI2cSpeed=100"
+    #     # This is sometimes needed for ddc/ci support, see
+    #     # https://www.ddcutil.com/nvidia/
+    #     #
+    #     # Current monitor does not support it,
+    #     # but this is useful for the future
+    #     "NVreg_RegistryDwords=RMUseSwI2c=0x01;RMI2cSpeed=100"
 
-        # When (if!) I get another nvidia GPU,
-        # check for resizeable bar settings
-      ];
+    #     # When (if!) I get another nvidia GPU,
+    #     # check for resizeable bar settings
+    #   ];
 
     environment.variables = {
 

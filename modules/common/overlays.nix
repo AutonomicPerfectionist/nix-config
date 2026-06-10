@@ -93,97 +93,98 @@ let
   # ── ROCm LLVM overlay ────────────────────────────────────────────────────
   # ROCm ships its own LLVM fork.  The upstream nixpkgs derivation hard-codes
   # march=skylake / mtune=znver3 which emits AVX2/BMI2 instructions that crash
-  # on Ivy Bridge and similar hosts.  This overlay rebuilds that LLVM using
-  # march flags derived from the actual host platform, making the ROCm stack
-  # portable across x86-64 micro-architecture levels.
+  # on Ivy Bridge and similar hosts.
   #
-  # NOTE: this overlay unconditionally rebuilds ROCm's LLVM even when the
-  # ROCm stack is not in use.  If compile time is a concern you can guard it:
-  #   (lib.optionals config.scl.overlays.rocm-amd [ rocmLlvmOverlay ])
-  rocmLlvmOverlay = final: prev:
-    let
-      hostArch =
+  # This overlay is only active when scl.overlays.rocm-llvm-arch is set.
+  # It rebuilds ONLY ROCm's LLVM using the specified arch, leaving all other
+  # nixpkgs packages untouched so binary cache hits are preserved.
+  #
+  # NOTE: do NOT set nixpkgs.hostPlatform.gcc.arch on the host — that would
+  # cause every package to be rebuilt from source, defeating the cache.
+  # Instead, set scl.overlays.rocm-llvm-arch = "ivybridge" (or similar) and
+  # leave hostPlatform as plain "x86_64-linux".
+  rocmLlvmOverlay =
+    if config.scl.overlays.rocm-llvm-arch == null
+    then (_: _: {})
+    else
+      final: prev:
         let
-          gccArch = final.stdenv.hostPlatform.gcc.arch or null;
-          cpuName = final.stdenv.hostPlatform.parsed.cpu.name;
-        in
-        if gccArch != null && gccArch != "x86_64" then gccArch
-        else if cpuName != null && cpuName != "x86_64" then cpuName
-        else "ivybridge";
+          hostArch = config.scl.overlays.rocm-llvm-arch;
 
-      marchFlag = "-march=${hostArch}";
+          marchFlag = "-march=${hostArch}";
 
-      # Suppress all post-AVX extensions when the host doesn't advertise them.
-      noExtensionFlags = lib.optionals
-        (!(builtins.elem "avx2" (final.stdenv.hostPlatform.gcc.isa or [])))
-        [
-          "-mno-avx2"
-          "-mno-bmi2"
-          "-mno-bmi"
-          "-mno-movbe"
-          "-mno-fma"
-          "-mno-lzcnt"
-          "-mno-rdrnd"
-          "-mno-f16c"
-        ];
-
-      hostCFlags = lib.concatStringsSep " " ([ marchFlag ] ++ noExtensionFlags);
-
-      # Strip hard-coded march/mtune flags from a derivation's
-      # NIX_CFLAGS_COMPILE and replace them with the host-appropriate ones.
-      patchCFlags = pkg: pkg.overrideAttrs (old: {
-        env = (old.env or {}) // {
-          NIX_CFLAGS_COMPILE = lib.pipe (old.env.NIX_CFLAGS_COMPILE or "") [
-            (lib.splitString " ")
-            (builtins.filter (f:
-              f != "-march=skylake" &&
-              f != "-mtune=znver3"  &&
-              f != ""
-            ))
-            (flags: flags ++ [ hostCFlags ])
-            (lib.concatStringsSep " ")
+          # Suppress all post-AVX extensions that ivybridge (and similar) lack.
+          # Since hostPlatform is left as plain x86_64-linux, gcc.isa will be
+          # empty — so these flags are always appended when an arch is set,
+          # which is the safe/correct behaviour for pre-AVX2 hosts.
+          noExtensionFlags = [
+            "-mno-avx2"
+            "-mno-bmi2"
+            "-mno-bmi"
+            "-mno-movbe"
+            "-mno-fma"
+            "-mno-lzcnt"
+            "-mno-rdrnd"
+            "-mno-f16c"
           ];
-        };
-      });
 
-      # Patch the libstdcxxClang wrapper so the host flags propagate into
-      # all downstream compilations that use this compiler.
-      llvmPackages_22_patched = prev.llvmPackages_22 // {
-        override = args:
-          let
-            base = prev.llvmPackages_22.override args;
-            patchedLibstdcxxClang = base.libstdcxxClang.overrideAttrs (old: {
-              postFixup = (old.postFixup or "") + ''
-                echo "${hostCFlags}" >> $out/nix-support/cc-cflags
-              '';
-            });
-          in
-          base // {
-            inherit (base) override overrideScope;
-            libstdcxxClang = patchedLibstdcxxClang;
+          hostCFlags = lib.concatStringsSep " " ([ marchFlag ] ++ noExtensionFlags);
+
+          # Strip hard-coded march/mtune flags from a derivation's
+          # NIX_CFLAGS_COMPILE and replace them with the host-appropriate ones.
+          patchCFlags = pkg: pkg.overrideAttrs (old: {
+            env = (old.env or {}) // {
+              NIX_CFLAGS_COMPILE = lib.pipe (old.env.NIX_CFLAGS_COMPILE or "") [
+                (lib.splitString " ")
+                (builtins.filter (f:
+                  f != "-march=skylake" &&
+                  f != "-mtune=znver3"  &&
+                  f != ""
+                ))
+                (flags: flags ++ [ hostCFlags ])
+                (lib.concatStringsSep " ")
+              ];
+            };
+          });
+
+          # Patch the libstdcxxClang wrapper so the host flags propagate into
+          # all downstream compilations that use this compiler.
+          llvmPackages_22_patched = prev.llvmPackages_22 // {
+            override = args:
+              let
+                base = prev.llvmPackages_22.override args;
+                patchedLibstdcxxClang = base.libstdcxxClang.overrideAttrs (old: {
+                  postFixup = (old.postFixup or "") + ''
+                    echo "${hostCFlags}" >> $out/nix-support/cc-cflags
+                  '';
+                });
+              in
+              base // {
+                inherit (base) override overrideScope;
+                libstdcxxClang = patchedLibstdcxxClang;
+              };
           };
-      };
-    in
-    {
-      rocmPackages = prev.rocmPackages.overrideScope (scopeFinal: scopePrev: {
-        llvm = lib.recurseIntoAttrs (
-          let
-            base = lib.callPackageWith
-              (final // {
-                inherit (scopePrev) rocm-device-libs;
-                llvmPackages_22 = llvmPackages_22_patched;
-              })
-              (prev.path + "/pkgs/development/rocm-modules/llvm/default.nix")
-              {};
-          in
-          base // {
-            llvm              = patchCFlags base.llvm;
-            lld               = patchCFlags base.lld;
-            clang-unwrapped   = patchCFlags base.clang-unwrapped;
-          }
-        );
-      });
-    };
+        in
+        {
+          rocmPackages = prev.rocmPackages.overrideScope (scopeFinal: scopePrev: {
+            llvm = lib.recurseIntoAttrs (
+              let
+                base = lib.callPackageWith
+                  (final // {
+                    inherit (scopePrev) rocm-device-libs;
+                    llvmPackages_22 = llvmPackages_22_patched;
+                  })
+                  (prev.path + "/pkgs/development/rocm-modules/llvm/default.nix")
+                  {};
+              in
+              base // {
+                llvm              = patchCFlags base.llvm;
+                lld               = patchCFlags base.lld;
+                clang-unwrapped   = patchCFlags base.clang-unwrapped;
+              }
+            );
+          });
+        };
 
   # ── Custom source overlay ─────────────────────────────────────────────────
   # When services.llama.useCustomSource is true, replace every llama-cpp
@@ -226,6 +227,7 @@ let
     llama-cpp-sycl =
       overrideFork prev.llama-cpp-sycl;
   };
+
  # ── ROCm GPU targets overlay ───────────────────────────────────────────────
   # Restricts rocmPackages.clr to only build for the specified GPU
   # architectures.  Changes to rocmPackages propagate to pkgsRocm (the
@@ -256,6 +258,21 @@ in
         gfx1030 = RX 6xxx / W6800, gfx906 = MI50 / MI60 / MI210 / MI250.
       '';
     };
+    rocm-llvm-arch = lib.mkOption {
+      type        = lib.types.nullOr lib.types.str;
+      default     = null;
+      description = ''
+        When set, overrides the march used when building ROCm's LLVM,
+        replacing the upstream hardcoded skylake/znver3 flags.  Set this
+        to your host CPU architecture (e.g. "ivybridge") to avoid illegal
+        instruction crashes on older hardware.
+
+        Critically, this only affects ROCm's internal LLVM scope — all
+        other nixpkgs packages are left untouched, preserving binary cache
+        hits.  Do NOT set nixpkgs.hostPlatform.gcc.arch to achieve this;
+        doing so rebuilds everything from source.
+      '';
+    };
   };
 
   # ── Config ─────────────────────────────────────────────────────────────────
@@ -265,8 +282,8 @@ in
     (lib.optionals config.scl.overlays.sycl-intel [ intelOverlay syclOverlay ])
 
     # AMD ROCm stack (llama-cpp-rocm with RPC + patched LLVM).
-    # rocmLlvmOverlay is kept separate so it can be toggled independently
-    # without affecting the ROCm package overlay.
+    # rocmLlvmOverlay is a no-op when rocm-llvm-arch is null, so it is safe
+    # to include unconditionally; the guard lives inside the overlay itself.
     (lib.optionals config.scl.overlays.rocm-amd  [ rocmOverlay rocmLlvmOverlay ])
 
     # ROCm GPU target architectures (restricts clr + downstream pkgsRocm).
@@ -283,3 +300,4 @@ in
     [ customSourceOverlay ]
   ];
 }
+

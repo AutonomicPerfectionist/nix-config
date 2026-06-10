@@ -14,14 +14,9 @@ fileSystems."/nix" = {
      options = [ "noatime" ];
    };
 
- nix.settings.system-features = ["nixos-test" "benchmark" "big-parallel" "kvm" "gccarch-ivybridge"];
-       nixpkgs.hostPlatform = {
-         gcc.arch = "ivybridge";
-         gcc.tune = "ivybridge";
-         system = "x86_64-linux";
-       };
-       
-    imports = [
+
+  scl.overlays.rocm-llvm-arch = "ivybridge";       
+  imports = [
       
     ./hardware-configuration.nix
     ./disk-config.nix
@@ -40,7 +35,7 @@ fileSystems."/nix" = {
   enableRocmSupport = true;
 
   scl.overlays.rocm-amd = true;
-  services.llama.useCustomSource = true;
+  services.llama.useCustomSource = false;
   services.llama.rpcServer.enable = true;
   # Vulkan mitigates the observed memory leak
   services.llama.preferVulkan = true;

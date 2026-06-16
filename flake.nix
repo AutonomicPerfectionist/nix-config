@@ -39,8 +39,10 @@
 
   outputs =
     { ... }@inputs:
-    let
-      mkConfiguration =
+let
+  system = "x86_64-linux";
+  pkgs = inputs.nixpkgs.legacyPackages.${system};
+  mkConfiguration =
         { system, modules }:
         inputs.nixpkgs.lib.nixosSystem {
           inherit system;
@@ -212,6 +214,34 @@
 
       lib = {
         nixosHostNames = allHostNames;
+      };
+      homeConfigurations = {
+        branden = inputs.home-manager.lib.homeManagerConfiguration {
+          inherit pkgs;
+
+          extraSpecialArgs = {
+            flake-inputs = inputs // { inherit system; };
+            pkgs-stable = import inputs.nixpkgs-stable {
+              inherit system;
+              config.allowUnfree = true;
+            };
+          };
+
+          modules = [
+            ./users/branden/home/home.nix
+            {
+              targets.genericLinux.enable = true;
+
+              nixpkgs.config.allowUnfree = true;
+              nixpkgs.config.nvidia.acceptLicense = true;
+              targets.genericLinux.gpu.nvidia = {
+                enable = true;
+                version = "595.71.05";
+                sha256 = "sha256-NiA7iWC35JyKQva6H1hjzeNKBek9KyS3mK8G3YRva4I=";
+              };
+            }
+          ];
+        };
       };
     };
 }

@@ -59,6 +59,9 @@
   hardware.graphics.enable = true;
   hardware.gpu.amd.enable = true;
   enableRocmSupport = true;
+  scl.overlays.rocm-gpu-targets = [
+    "gfx1030"
+  ];
 
   # Container configuration
   virtualisation.podman.enable = true;
@@ -128,7 +131,7 @@
   services.llama.rpcServer.enable = true;
   services.llama.useCustomSource = true;
   # Vulkan apparently mitigates the memory leak
-  services.llama.preferVulkan = true;
+  # services.llama.preferVulkan = true;
 
   services.openssh.settings = {
     X11Forwarding = true;

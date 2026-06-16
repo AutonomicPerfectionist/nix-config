@@ -71,6 +71,7 @@ let
   # ── cmake flag override ──────────────────────────────────────────────────
   # Applied on top of whatever the upstream derivation already sets.
   llamaPkg = llamaBasePkg.overrideAttrs (old: {
+    # cmakeBuildType = "RelWithDebInfo";
     cmakeFlags = (old.cmakeFlags or []) ++ [
       # Disable auto-detection; we control every flag explicitly below so
       # the derivation is reproducible across identical hardware classes.

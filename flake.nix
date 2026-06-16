@@ -32,7 +32,7 @@
     sycl.url = "github:MordragT/nixos";
     llm-agents.url = "github:numtide/llm-agents.nix";
     llama-cpp-fork = {
-      url = "github:rgerganov/llama.cpp/rpc-async-rebased";
+      url = "github:sredman/llama.cpp/work/sredman/rpc-pipeline-parallelism-support";
       flake = false;
     };
   };

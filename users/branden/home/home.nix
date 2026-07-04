@@ -49,6 +49,7 @@ in
     python314Packages.clustershell
     nix-ld
     devenv
+    mosh
 
     # Nix linting, formatting, and IDE support
     deadnix
@@ -56,7 +57,6 @@ in
     nil
     # vscodium
     # vscode
-    # zed-editor
     # neovim
     # flatpak
     # obsidian
@@ -326,8 +326,6 @@ EOF
           local cmd="$1"
 
           case "$cmd" in
-            ls)
-              echo "[hint] consider: eza (better ls)" ;;
             cd)
               echo "[hint] consider: zoxide (z <dir>)" ;;
             du)

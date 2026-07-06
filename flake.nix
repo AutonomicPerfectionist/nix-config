@@ -29,11 +29,14 @@
 
     nixos-facter-modules.url = "github:numtide/nixos-facter-modules";
 
-    sycl.url = "github:MordragT/nixos";
     llm-agents.url = "github:numtide/llm-agents.nix";
     llama-cpp-fork = {
       url = "github:sredman/llama.cpp/work/sredman/rpc-pipeline-parallelism-support";
       flake = false;
+    };
+    mlnx-ofed-nixos = {
+      url = "github:codgician/mlnx-ofed-nixos";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
@@ -167,6 +170,19 @@ let
             ./hosts/fatman/fatman-2/configuration.nix
             inputs.disko.nixosModules.disko
             inputs.agenix.nixosModules.default
+            # Add packages from this repo and set up binary cache
+            inputs.mlnx-ofed-nixos.nixosModules.setupCacheAndOverlays
+            # Add configuration options from this repo
+            # inputs.mlnx-ofed-nixos.nixosModules.default
+            # Example configuration
+            # ({ config, ... }: {
+            #   hardware.mlnx-ofed = {
+            #     enable = true;
+            #     nvme.enable = true;
+            #     nfsrdma.enable = true;
+            #     kernel-mft.enable = true;
+            #   };
+            # })
           ];
         };
 

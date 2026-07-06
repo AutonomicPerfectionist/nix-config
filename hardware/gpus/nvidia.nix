@@ -1,5 +1,10 @@
 # gpus.nix
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with lib;
 
@@ -57,9 +62,7 @@ let
   ];
 
   # Resolve enabled GPU metadata
-  enabledProfiles =
-    map (card: gpuProfiles.${card})
-      (filter (card: gpuProfiles ? ${card}) cfg.cards);
+  enabledProfiles = map (card: gpuProfiles.${card}) (filter (card: gpuProfiles ? ${card}) cfg.cards);
 
   # Determine the most compatible driver branch across all selected cards
   selectedDriver =
@@ -68,19 +71,19 @@ let
 
       hasDriver = drv: builtins.elem drv drivers;
     in
-      findFirst hasDriver "stable" driverPriority;
+    findFirst hasDriver "stable" driverPriority;
 
   # Merge all requested CUDA capabilities so binaries can target all GPUs
-  mergedCudaCapabilities =
-    unique (flatten (map (p: p.cudaCapabilities) enabledProfiles));
+  mergedCudaCapabilities = unique (flatten (map (p: p.cudaCapabilities) enabledProfiles));
 
   # Resolve actual driver package object
   nvidiaPackage =
-    if selectedDriver == "stable"
-    then config.boot.kernelPackages.nvidiaPackages.stable
-    else if selectedDriver == "beta"
-    then config.boot.kernelPackages.nvidiaPackages.beta
-    else config.boot.kernelPackages.nvidiaPackages.${selectedDriver};
+    if selectedDriver == "stable" then
+      config.boot.kernelPackages.nvidiaPackages.stable
+    else if selectedDriver == "beta" then
+      config.boot.kernelPackages.nvidiaPackages.beta
+    else
+      config.boot.kernelPackages.nvidiaPackages.${selectedDriver};
 
 in
 {
@@ -104,6 +107,7 @@ in
     #   --device=nvidia.com/gpu=all
     environment.systemPackages = with pkgs; [
       nvtopPackages.nvidia
+      cudatoolkit
     ];
 
     nixpkgs.config = {
@@ -154,12 +158,13 @@ in
     };
 
     # Load Nvidia driver for X and Wayland
-    services.xserver.videoDrivers =
-      mkIf config.hardware.graphics.enable [ "nvidia" ];
+    services.xserver.videoDrivers = mkIf config.hardware.graphics.enable [ "nvidia" ];
 
     boot.kernel.sysctl = {
-      "vm.min_free_kbytes" = 1048576;  # 1GB; tune to your system
+      "vm.min_free_kbytes" = 1048576; # 1GB; tune to your system
     };
+    boot.blacklistedKernelModules = [ "nouveau" ];
+    boot.kernelParams = [ "nouveau.modeset=0" ];
     # boot.extraModprobeConfig =
     #   "options nvidia "
     #   + lib.concatStringsSep " " [
@@ -195,6 +200,18 @@ in
 
       # Hardware cursors are currently broken on nvidia
       WLR_NO_HARDWARE_CURSORS = "1";
+
+      # CUDA runtime library path
+      LD_LIBRARY_PATH = "${nvidiaPackage}/lib:${pkgs.cudatoolkit}/lib${
+        optionalString (config.system.path != null) ":${config.system.path}/lib"
+      }:$LD_LIBRARY_PATH";
+
+      # CUDA toolkit root
+      CUDA_PATH = "${pkgs.cudatoolkit}";
+
+      # Linker/compiler flags for CUDA programs
+      EXTRA_LDFLAGS = "-L/lib -L${nvidiaPackage}/lib";
+      EXTRA_CCFLAGS = "-I/usr/include";
     };
   };
 }

@@ -51,6 +51,33 @@ in
       environment.sessionVariables = {
         LIBVA_DRIVER_NAME = "iHD"; # Prefer the modern iHD backend
         # VDPAU_DRIVER = "va_gl";      # Only if using libvdpau-va-gl
+
+        # Make the Intel GPU compute stack discoverable to *foreign* (non-Nix)
+        # dynamically-linked programs — most importantly pip/uv-installed
+        # PyTorch XPU wheels.
+        #
+        # The torch-xpu wheel bundles the whole oneAPI/SYCL runtime EXCEPT the
+        # Level Zero loader: its Unified Runtime adapter dlopen()s
+        # "libze_loader.so.1" at runtime, which in turn loads the Intel Level
+        # Zero driver "libze_intel_gpu.so.1". Both live in /run/opengl-driver/lib
+        # (populated by hardware.graphics + intel-compute-runtime below).
+        #
+        # nix-ld alone is NOT sufficient here: it seeds the initial binary's
+        # search path via NIX_LD_LIBRARY_PATH but does not export
+        # LD_LIBRARY_PATH, so a runtime dlopen() by name still fails. Exporting
+        # LD_LIBRARY_PATH makes
+        #   uv sync && python -c 'import torch; assert torch.xpu.is_available()'
+        # work with no per-project setup.
+        #
+        # Placed in sessionVariables (not environment.variables) so it is set
+        # for both interactive login shells (/etc/set-environment) and
+        # non-interactive ssh sessions (/etc/pam/environment via pam_env). The
+        # ''${LD_LIBRARY_PATH} reference is braced so it expands in *both* the
+        # shell-sourced file and the pam_env file (pam_env only understands the
+        # braced form; a bare $VAR would be treated as literal text). This
+        # directory contains only GPU driver libraries (no libc/libstdc++/etc.),
+        # so it is safe to prepend globally.
+        LD_LIBRARY_PATH = "/run/opengl-driver/lib:\${LD_LIBRARY_PATH}";
       };
 
       environment.systemPackages = with pkgs; [
@@ -58,7 +85,6 @@ in
         intel-compute-runtime.drivers
         level-zero
         intel-graphics-compiler
-        sycl-info
         clinfo
         nvtopPackages.intel
       ];

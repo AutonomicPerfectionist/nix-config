@@ -25,6 +25,10 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    environment.etc.certfile = {
+      source = "/etc/ssl/certs/ca-bundle.crt";
+      target = "ssl/cert.pem";
+    };
     users.users.branden = {
       isNormalUser = true;
       description = "Branden Butler";

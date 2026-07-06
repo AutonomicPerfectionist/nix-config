@@ -57,7 +57,7 @@ let
     if      cfg.preferVulkan then pkgs.llama-cpp-vulkan
     else if useCuda          then pkgsCuda.llama-cpp   # CUDA variant from re-instantiated set
     else if useRocm          then pkgsRocm.llama-cpp   # ROCm variant from pkgsRocm (picks up rocmGpuTargetsOverlay)
-    else if useSycl          then pkgs.llama-cpp-vulkan  # SYCL/Intel variant from syclOverlay
+    else if useSycl          then pkgs.llama-cpp-sycl   # SYCL/Intel variant (syclOverlay + fork swap)
     else                           pkgs.llama-cpp;      # CPU-only fallback
 
   # ── Host ISA probe ───────────────────────────────────────────────────────
@@ -88,8 +88,15 @@ let
 
       # Build CPU backend variants as dynamic plugins so the runtime picks
       # the best one for the executing CPU at load time.
-      (cmakeBool "GGML_CPU_ALL_VARIANTS" true)
-      (cmakeBool "GGML_BACKEND_DL"       true)
+      #
+      # Disabled for the SYCL build: GGML_CPU_ALL_VARIANTS also compiles the
+      # Sapphire Rapids AMX backend (ggml-cpu/amx/mmq.cpp), whose AMX intrinsics
+      # the Intel DPC++ clang pathologically hangs on — one core pinned at 100%
+      # for 30+ minutes. The GPU does the compute here, so a single host CPU
+      # fallback backend (GGML_NATIVE-gated below) is sufficient. CUDA/ROCm
+      # builds use gcc, which compiles the AMX kernel fine, so they keep it.
+      (cmakeBool "GGML_CPU_ALL_VARIANTS" (!useSycl))
+      (cmakeBool "GGML_BACKEND_DL"       (!useSycl))
 
       # CUDA flash-attention requires compute capability ≥ 7.5 (Turing+).
       (cmakeBool "GGML_CUDA_FA" (
@@ -100,6 +107,20 @@ let
 
       # RPC transport for multi-host / multi-GPU distributed inference.
       (cmakeBool "GGML_RPC" true)
+    ] ++ lib.optionals useSycl [
+      # CPU fallback ISA for the SYCL host. With GGML_CPU_ALL_VARIANTS off we
+      # build a single CPU backend, and because gcc.isa is empty on the generic
+      # x86_64-linux platform the hasIsa-gated flags above would leave it at
+      # baseline SSE. big-nix — the only SYCL host — is a Broadwell Xeon
+      # (E5-2640 v4): AVX2/FMA/F16C/BMI2, but NO AVX512 and NO AMX. Force that
+      # feature set so CPU offload is fast, staying below AVX512 (would SIGILL
+      # on this CPU) and AMX (hangs the DPC++ compile). These come last, so they
+      # override the hasIsa defaults above.
+      (cmakeBool "GGML_AVX"  true)
+      (cmakeBool "GGML_AVX2" true)
+      (cmakeBool "GGML_FMA"  true)
+      (cmakeBool "GGML_F16C" true)
+      (cmakeBool "GGML_BMI2" true)
     ];
   });
 in

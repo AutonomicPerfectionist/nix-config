@@ -1,7 +1,7 @@
 # overlays.nix
 #
 # NixOS module providing GPU compute overlays for:
-#   • Intel Arc/Xe  – SYCL via flake-inputs.sycl   (sycl-intel, default on)
+#   • Intel Arc/Xe  – SYCL via nixpkgs intel-oneapi-toolkit (sycl-intel, default on)
 #   • AMD           – ROCm from nixpkgs             (rocm-amd,   default off)
 #
 # Also provides the optional rgerganov/llama.cpp fork swap controlled by
@@ -25,46 +25,111 @@
   ...
 }:
 let
-  # ── Intel overlay ────────────────────────────────────────────────────────
-  # Re-export Level Zero and the Intel compute runtime from prev so all
-  # packages in the closure share the same ABI.  Does NOT touch kernel
-  # drivers — only Nixpkgs-level userspace packages.
-  intelOverlay = final: prev: {
-    inherit (prev)
-      level-zero
-      intel-compute-runtime
-      intel-graphics-compiler
-      ;
+  # ── SYCL toolkit (Intel oneAPI, from nixpkgs) ─────────────────────────────
+  # nixpkgs' intel-oneapi-toolkit ships the DPC++ compiler (icpx), oneMKL and
+  # TBB from a single 2026 release — all sharing ONE libsycl.so.9. Building
+  # llama's SYCL backend and linking oneMKL from the same toolkit therefore
+  # avoids the dual-libsycl ABI crash that occurs when an intel/llvm-nightly
+  # llama (libsycl.so.9) is linked against an oneAPI-release oneMKL
+  # (libsycl.so.8): the loader interposes __sycl_register_lib across versions
+  # and segfaults at static-init. We only install the components we need to
+  # keep the closure down (this is a ~unfree binary toolkit, built locally).
+  syclToolkit = pkgs.intel-oneapi-toolkit.override {
+    components = [
+      "intel.oneapi.lin.dpcpp-cpp-compiler"
+      "intel.oneapi.lin.mkl.devel"
+      "intel.oneapi.lin.tbb.devel"
+    ];
   };
 
   # ── SYCL overlay ─────────────────────────────────────────────────────────
-  # Builds llama-cpp-sycl from flake-inputs.sycl against the same Level Zero
-  # and compute-runtime versions pinned by intelOverlay, then patches the
-  # resulting ELF binaries so they can find the runtime libraries at runtime.
+  # Hand-written llama-cpp-sycl: nixpkgs' llama-cpp has no SYCL backend, so we
+  # compile the sredman rpc-pipeline-parallelism fork (same source as the other
+  # llama.cpp services, for RPC wire-compatibility) with the toolkit's icpx
+  # stdenv and its bundled oneMKL. The generic cmake flags (single CPU backend,
+  # Broadwell ISA, GGML_RPC) are layered on by modules/ml/llama.nix.
   syclOverlay = final: prev: {
-    llama-cpp-sycl = flake-inputs.sycl.packages.${prev.system}.llama-cpp-sycl.overrideAttrs (old: {
-      cmakeFlags = (old.cmakeFlags or []) ++ [
-        "-DGGML_RPC=ON"
+    llama-cpp-sycl = syclToolkit.stdenv.mkDerivation (finalAttrs: {
+      pname = "llama-cpp-sycl";
+      version = "b0-rpc-pp-fork"; # sredman rpc-pipeline-parallelism branch
+
+      src = flake-inputs.llama-cpp-fork;
+
+      # nixpkgs' stdenv injects -D_FORTIFY_SOURCE, and icpx forwards it to the
+      # SYCL *device* (SPIR-V) compilation too. Fortified memcpy emits calls to
+      # __memcpy_chk, which does not exist in the GPU device runtime — the JIT
+      # then fails at kernel link time ("Unresolved Symbol <__memcpy_chk>") and
+      # the first matmul aborts. Disable fortify so device code uses plain
+      # memcpy. (Host-side impact is negligible; the GPU does the work.)
+      hardeningDisable = [ "fortify" "fortify3" ];
+
+      nativeBuildInputs = [
+        prev.cmake
+        prev.ninja
+        prev.pkg-config
+        prev.git
+        prev.autoAddDriverRunpath
       ];
 
-      nativeBuildInputs = (old.nativeBuildInputs or []) ++ [
-        prev.addDriverRunpath
+      buildInputs = [
+        syclToolkit        # DPC++ runtime + oneMKL (find_package(MKL))
+        prev.level-zero    # ze_loader for GGML_SYCL_SUPPORT_LEVEL_ZERO
+        prev.ocl-icd
+        prev.opencl-headers
+        prev.curl
       ];
 
-      buildInputs = (old.buildInputs or []) ++ [
-        prev.level-zero
-        prev.intel-compute-runtime
+      # find_package(MKL) reads MKLROOT to locate MKLConfig.cmake + libraries.
+      MKLROOT = "${syclToolkit}/mkl/latest";
+
+      cmakeFlags = [
+        (lib.cmakeBool "GGML_SYCL" true)
+        "-DGGML_SYCL_TARGET=INTEL"
+        (lib.cmakeBool "GGML_SYCL_F16" true)
+
+        # oneDNN is not in our component set; the fork gates it on GGML_SYCL_DNN.
+        (lib.cmakeBool "GGML_SYCL_DNN" false)
+
+        (lib.cmakeBool "BUILD_SHARED_LIBS"    true)
+        (lib.cmakeBool "LLAMA_BUILD_SERVER"   true)
+
+        # Headless, offline build: the fork's Svelte web UI provisioning
+        # defaults to an npm build + HuggingFace download (impossible/slow in
+        # the sandbox). The OpenAI/completion API is unaffected.
+        (lib.cmakeBool "LLAMA_BUILD_UI"        false)
+        (lib.cmakeBool "LLAMA_USE_PREBUILT_UI" false)
+
+        # Tests/examples pull jinja/minja-heavy TUs that stall the compile and
+        # aren't needed for a server node.
+        (lib.cmakeBool "LLAMA_BUILD_TESTS"    false)
+        (lib.cmakeBool "LLAMA_BUILD_EXAMPLES" false)
+
+        # oneMKL host threading is irrelevant here (BLAS runs on the GPU);
+        # sequential drops the TBB/libiomp5 discovery that otherwise fails.
+        "-DMKL_THREADING=sequential"
+        "-DMKL_SYCL_THREADING=sequential"
       ];
 
-      # Stamp runpaths on every ELF binary so the loader finds the compute
-      # runtime libraries without requiring LD_LIBRARY_PATH.
-      postFixup = (old.postFixup or "") + ''
-        for bin in $out/bin/*; do
-          if [ -x "$bin" ] && file "$bin" | grep -q ELF; then
-            addDriverRunpath "$bin"
+      postInstall = ''
+        ln -sf $out/bin/llama-cli $out/bin/llama
+        mkdir -p $out/include
+        cp $src/include/llama.h $out/include/ || true
+      '';
+
+      # Stamp the GPU driver runpath (/run/opengl-driver/lib) onto every ELF so
+      # the Level Zero loader and UR adapters resolve at runtime.
+      postFixup = ''
+        for f in "$out"/bin/* "$out"/lib/*.so*; do
+          if [ -f "$f" ] && head -c4 "$f" | grep -q ELF; then
+            addDriverRunpath "$f" || true
           fi
         done
       '';
+
+      meta = {
+        description = "llama.cpp with Intel oneAPI SYCL backend (rpc fork)";
+        mainProgram = "llama-server";
+      };
     });
   };
 
@@ -221,11 +286,9 @@ let
     llama-cpp-vulkan =
       overrideFork prev.llama-cpp-vulkan;
 
-    # IMPORTANT:
-    # sycl package comes from flake-inputs.sycl, so override THAT package
-    # directly rather than rebuilding from plain llama-cpp.
-    llama-cpp-sycl =
-      overrideFork prev.llama-cpp-sycl;
+    # NOTE: llama-cpp-sycl is defined by syclOverlay directly from the fork
+    # source (nixpkgs has no SYCL llama-cpp to override), so it is intentionally
+    # absent here.
   };
 
  # ── ROCm GPU targets overlay ───────────────────────────────────────────────
@@ -278,8 +341,8 @@ in
   # ── Config ─────────────────────────────────────────────────────────────────
 
   config.nixpkgs.overlays = lib.concatLists [
-    # Intel SYCL stack (Level Zero ABI pin + llama-cpp-sycl build).
-    (lib.optionals config.scl.overlays.sycl-intel [ intelOverlay syclOverlay ])
+    # Intel SYCL stack (llama-cpp-sycl built against nixpkgs intel-oneapi-toolkit).
+    (lib.optionals config.scl.overlays.sycl-intel [ syclOverlay ])
 
     # AMD ROCm stack (llama-cpp-rocm with RPC + patched LLVM).
     # rocmLlvmOverlay is a no-op when rocm-llvm-arch is null, so it is safe

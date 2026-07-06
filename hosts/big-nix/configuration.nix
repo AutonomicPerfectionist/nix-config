@@ -20,6 +20,10 @@
     ../../hardware/gpus/gpus.nix
     flake-inputs.home-manager.nixosModules.default
     ../../modules/ml/llama.nix
+    ../../modules/ml/hermes.nix
+    # vLLM on the Intel Arc A770 via the official docker/Dockerfile.xpu build.
+    # Opt-in: does nothing until services.vllm-xpu.enable = true (see below).
+    ../../containers/vllm.nix
     ../../modules/distributed-builds.nix
     ../../modules/zfs.nix
     # ../../modules/ml/ai-agent/ai-agent.nix
@@ -58,6 +62,26 @@
 
   services.llama.useCustomSource = true;
   services.llama.rpcServer.enable = true;
+
+  # vLLM (Intel Arc A770 / XPU). Enabling this turns on docker and, on first
+  # activation, builds vllm from source via the pinned tag's docker/Dockerfile.xpu
+  # (a long, one-time, multi-GB build). It then serves an OpenAI-compatible API.
+  # There is no working pip/uv wheel path for vllm-XPU: the PyPI vllm wheel is
+  # CUDA-only (pins torch==2.11.0 + nvidia-cuda-*), so docker-from-source is the
+  # supported route. Uncomment and set a model to use it:
+  #
+  # Verified serving Qwen3-4B on the A770. The service enables docker itself and
+  # (on first activation) builds vllm from source via the pinned tag's
+  # docker/Dockerfile.xpu — a long, one-time, multi-GB build. Comment out to
+  # disable. Two Arc-specific fixes are baked into ../../containers/vllm.nix:
+  # a mem_get_info shim (consumer Arc can't report free VRAM) and
+  # --attention-backend TRITON_ATTN (A770/Alchemist can't use the Xe2/Xe3-only
+  # flash-attn cutlass kernel).
+  services.vllm-xpu = {
+    enable = true;
+    model  = "Qwen/Qwen3-4B-Instruct-2507";
+    # huggingFaceToken = "hf_..."; # for gated models (prefer agenix)
+  };
 
   networking.hostName = "big-nix";
   # Needs to be unique among machines, used

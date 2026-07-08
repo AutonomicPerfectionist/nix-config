@@ -22,6 +22,32 @@ let
   useRocm = config.hardware.gpu.amd.enable   or false;
   useSycl = config.hardware.gpu.intel.enable or false;
 
+  # ── Extra serviceConfig for GPU-backed llama units ───────────────────────
+  # The llama services run as DynamicUser, whose transient uid is in no groups
+  # by default — so it cannot open the DRI render node (/dev/dri/renderD*,
+  # mode 0660 root:render) that the SYCL/ROCm backends need. Grant the render
+  # and video groups on those backends. For the Intel SYCL backend also export
+  # ZES_ENABLE_SYSMAN so Level Zero can report real free VRAM instead of
+  # assuming total. NVIDIA is excluded: it uses world-accessible /dev/nvidia*
+  # nodes and has no render group to join.
+  gpuServiceConfig =
+    (lib.optionalAttrs (useSycl || useRocm) {
+      SupplementaryGroups = [ "render" "video" ];
+    })
+    // (lib.optionalAttrs useSycl {
+      # systemd units do NOT inherit the session LD_LIBRARY_PATH (that is set via
+      # pam_env / /etc/set-environment for login shells only). The SYCL runtime's
+      # Level Zero UR adapter dlopen()s the L0 driver by name at runtime, and that
+      # lookup is not covered by the binary's RPATH — so without this the unit
+      # enumerates no GPU ("No device of requested type available") even though it
+      # runs fine from an interactive shell. ZES_ENABLE_SYSMAN lets Level Zero
+      # report real free VRAM instead of assuming total.
+      Environment = [
+        "LD_LIBRARY_PATH=/run/opengl-driver/lib"
+        "ZES_ENABLE_SYSMAN=1"
+      ];
+    });
+
   # ── CUDA pkgs re-instantiation ───────────────────────────────────────────
    # We need a pkgs set with cudaSupport=true to pull llama-cpp's CUDA variant.
    # Inheriting cudaCapabilities from the host config keeps capability-gated
@@ -217,7 +243,7 @@ in
           Restart     = "on-failure";
           # Runs as a transient user; no home directory or persistent UID needed.
           DynamicUser = true;
-        };
+        } // gpuServiceConfig;
       };
     })
 
@@ -235,7 +261,7 @@ in
           ExecStart   = "${cfg.package}/bin/rpc-server --host 0.0.0.0";
           Restart     = "on-failure";
           DynamicUser = true;
-        };
+        } // gpuServiceConfig;
       };
     })
 
@@ -261,7 +287,7 @@ in
           '';
           Restart     = "on-failure";
           DynamicUser = true;
-        };
+        } // gpuServiceConfig;
       };
     })
   ];

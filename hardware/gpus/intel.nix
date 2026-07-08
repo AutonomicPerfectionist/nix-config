@@ -77,7 +77,35 @@ in
         # braced form; a bare $VAR would be treated as literal text). This
         # directory contains only GPU driver libraries (no libc/libstdc++/etc.),
         # so it is safe to prepend globally.
-        LD_LIBRARY_PATH = "/run/opengl-driver/lib:\${LD_LIBRARY_PATH}";
+        #
+        # ${pkgs.ocl-icd}/lib is appended for OpenCL: the OpenCL ICD *loader*
+        # (libOpenCL.so.1) lives in ocl-icd, NOT in /run/opengl-driver/lib
+        # (which only holds the driver ICD libigdrcl.so). Foreign OpenCL
+        # consumers that don't bundle a loader — e.g. the OpenVINO wheel's GPU
+        # plugin, which NEEDs libOpenCL.so.1 — fail to load without it ("cannot
+        # open shared object file"). nixpkgs' ocl-icd loader is patched to find
+        # the vendors dir under /run/opengl-driver automatically, so this alone
+        # is enough for OpenVINO to enumerate the A770.
+        LD_LIBRARY_PATH = "/run/opengl-driver/lib:${pkgs.ocl-icd}/lib:\${LD_LIBRARY_PATH}";
+
+        # Same story for OpenCL, which is how *foreign* runtimes reach the Arc
+        # GPU when they don't use Level Zero/SYCL — most importantly the
+        # pip/uv-installed OpenVINO wheel's GPU plugin (torch uses Level Zero and
+        # already works via LD_LIBRARY_PATH above; OpenVINO GPU uses OpenCL).
+        #
+        # OpenCL discovery goes through an "ICD loader" (libOpenCL.so) that reads
+        # *.icd vendor files to find the actual driver. NixOS installs the Intel
+        # NEO driver's vendor file under /run/opengl-driver/etc/OpenCL/vendors,
+        # and its own ocl-icd is patched to look there — which is why `clinfo`
+        # sees the A770. But the OpenVINO wheel bundles its OWN unpatched ICD
+        # loader, which only checks /etc/OpenCL/vendors (empty on NixOS), finds
+        # no Intel platform, and silently falls back to CPU. OCL_ICD_VENDORS
+        # points any ICD loader at the NixOS vendors directory, so
+        #   uv run python -c 'import openvino as ov; print(ov.Core().available_devices)'
+        # lists GPU with no per-project setup. (The .icd there uses an absolute
+        # store path to libigdrcl.so, whose own deps resolve via the
+        # LD_LIBRARY_PATH above.)
+        OCL_ICD_VENDORS = "/run/opengl-driver/etc/OpenCL/vendors";
       };
 
       environment.systemPackages = with pkgs; [

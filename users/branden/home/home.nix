@@ -50,6 +50,7 @@ in
     nix-ld
     devenv
     mosh
+    llm-agents.claude-code
 
     # Nix linting, formatting, and IDE support
     deadnix

@@ -12,7 +12,9 @@
     ../../modules/cluster/mounts.nix
     ../../modules/cluster/management.nix
     ../../modules/cluster/distributed.nix
+    ../../modules/cluster/rdma.nix
     ../../modules/input-methods.nix
+    ../../modules/common/overlays.nix
     flake-inputs.home-manager.nixosModules.default
 
     # Users
@@ -31,12 +33,12 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  # Kernel 6.12 has the ib_qib module needed for the infiniband cards
-  boot.kernelPackages = pkgs.linuxPackages_6_12;
+  boot.kernelPackages = pkgs.linuxPackages_latest;
 
   networking.networkmanager.enable = true;
   networking.firewall.enable = false;
   hardware.infiniband.enable = true;
+  cluster.rdma.enable = true;
 
   nixpkgs.config.allowUnfree = true;
 

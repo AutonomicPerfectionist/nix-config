@@ -311,7 +311,7 @@ in
   # ── Options ────────────────────────────────────────────────────────────────
 
   options.scl.overlays = {
-    sycl-intel = lib.mkEnableOption "SYCL + Intel GPU overlay stack" // { default = true;  };
+    sycl-intel = lib.mkEnableOption "SYCL + Intel GPU overlay stack";
     rocm-amd   = lib.mkEnableOption "ROCm  + AMD  GPU overlay stack" // { default = false; };
     rocm-gpu-targets = lib.mkOption {
       type        = lib.types.listOf lib.types.str;

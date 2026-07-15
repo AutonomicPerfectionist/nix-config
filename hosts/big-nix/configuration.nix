@@ -60,6 +60,8 @@
   hardware.graphics.enable = true;
   hardware.gpu.intel.enable = true;
 
+  scl.overlays.sycl-intel = true;
+
   services.llama.useCustomSource = true;
   services.llama.rpcServer.enable = true;
 
@@ -78,7 +80,7 @@
   # --attention-backend TRITON_ATTN (A770/Alchemist can't use the Xe2/Xe3-only
   # flash-attn cutlass kernel).
   services.vllm-xpu = {
-    enable = true;
+    enable = false;
     model  = "Qwen/Qwen3-4B-Instruct-2507";
     # huggingFaceToken = "hf_..."; # for gated models (prefer agenix)
   };

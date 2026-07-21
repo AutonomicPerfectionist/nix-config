@@ -12,7 +12,10 @@ let
 in
 
 {
-  imports = [];
+  imports = [
+    ./niri.nix
+    ./noctalia.nix
+  ];
 
   # Home Manager needs a bit of information about you and the
   # paths it should manage.
@@ -48,7 +51,7 @@ in
     nerd-fonts.fira-code
     python314Packages.clustershell
     nix-ld
-    devenv
+    # devenv
     mosh
     llm-agents.claude-code
 
@@ -111,7 +114,9 @@ in
   programs.delta.enableGitIntegration = true;
 
   # Lazygit semantic diff integration config
-  xdg.configFile."lazygit/config.yml".text = ''
+  xdg.configFile."lazygit/config.yml" = {
+    force = true;
+    text = ''
     customCommands:
       - key: "D"
         context: "files"
@@ -125,7 +130,8 @@ in
         output: terminal
         description: "Semantic commit diff"
   '';
-
+  };
+ 
   programs.git.enable = true;
   programs.git.settings = {
     user.name = "Branden Butler";
@@ -311,9 +317,6 @@ Markdown:
 Session:
   zellij         → terminal multiplexer
 
-AI / Helpers:
-  atuin          → shell history
-
 EOF
       }
 
@@ -433,5 +436,6 @@ EOF
     # quiet = true;
     wheel-lines = 3;
   };
+
 
 }

@@ -22,4 +22,15 @@
       flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
     '';
   };
+
+  # Flatpak packages to install (graphical systems only)
+  systemd.services.flatpak-packages = lib.mkIf (lib.hasAttrByPath [ "scl" "graphical" "enable" ] config && config.scl.graphical.enable) {
+    wantedBy = [ "multi-user.target" ];
+    after = [ "flatpak-repo-setup.service" "network-online.target" ];
+    wants = [ "flatpak-repo-setup.service" "network-online.target" ];
+    path = [ pkgs.flatpak ];
+    script = ''
+      flatpak install --noninteractive flathub com.discordapp.Discord dev.vencord.Vesktop com.slack.Slack 2>/dev/null || true
+    '';
+  };
 }

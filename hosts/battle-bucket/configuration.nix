@@ -16,26 +16,40 @@ in
     flake-inputs.nixos-hardware.nixosModules.dell-g3-3779
     ./hardware-configuration.nix
     ./disk-config.nix
+    ../../hardware/gpus/nvidia.nix
 
     # USERS (make sure there's at least one!!)
     ../../users/branden
 
     # CUSTOM MODULES
     ../../modules/nix-settings.nix
+    ../../modules/distributed-builds.nix
+    ../../modules/common/overlays.nix
     ../../modules/avahi.nix
-    ../../modules/amdgpu.nix
+    # ../../modules/amdgpu.nix
     ../../modules/gnome.nix
-    ../../modules/cosmic.nix
-    ../../modules/hyprland.nix
-    ../../modules/gaming.nix
+    # ../../modules/cosmic.nix
+    # ../../modules/hyprland.nix
+    # ../../modules/gaming.nix
     ../../modules/gnupg.nix
     ../../modules/flatpak.nix
     ../../modules/nix-ld.nix
+    ../../modules/ml/llama.nix
+    ../../modules/graphical
+    ../../modules/graphical/niri.nix
+    ../../modules/graphical/noctalia.nix
 
     # local modules
-    ./tailscale.nix
-    ./frpc.nix
+    # ./tailscale.nix
+    # ./frpc.nix
   ];
+
+  # Graphical desktop
+  scl.graphical = {
+    enable = true;
+    niri.enable = true;
+    noctalia.enable = true;
+  };
 
   # Users config
   userconfig.branden = {
@@ -48,7 +62,7 @@ in
     useGlobalPkgs = true;
     useUserPackages = true;
   };
-
+  hardware.gpu.nvidia.enable = true;
   # Bootloader.
   boot.loader.systemd-boot = {
     enable = true;
@@ -64,8 +78,7 @@ in
   # options usbhid mousepoll=8 jspoll=8 quirks=0x045e:0x028e:0x0400
   # '';
 
-  # get wireshark workin
-  programs.wireshark.enable = true;
+
   services.udev.extraRules = ''
     SUBSYSTEM=="usbmon", GROUP="wireshark", MODE="0640"
   '';
@@ -94,29 +107,10 @@ in
   };
 
 
-  # Enable the X11 windowing system.
-  services.xserver.enable = true;
-
-  # Use GDM even if we're not on Gnome
-  services.displayManager.gdm.enable = true;
-
   # Configure keymap in X11
   services.xserver.xkb = {
     layout = "us";
     variant = "";
-  };
-
-  # Enable CUPS to print documents.
-  services.printing.enable = true;
-
-  # Enable sound with pipewire.
-  services.pulseaudio.enable = false;
-  security.rtkit.enable = true;
-  services.pipewire = {
-    enable = true;
-    alsa.enable = true;
-    alsa.support32Bit = true;
-    pulse.enable = true;
   };
 
   # Install firefox.
@@ -141,22 +135,22 @@ in
       dig
       traceroute
       nmap
-      ungoogled-chromium
+      # ungoogled-chromium
       vesktop
-      brave
+      # brave
       pavucontrol
-      parsec-bin
-      godot_4
-      wireshark
+      # parsec-bin
+      # godot_4
+      # wireshark
       qbittorrent
-      rpcs3
-      pcsx2
+      # rpcs3
+      # pcsx2
       libreoffice
-      calibre
-      obs-studio
+      # calibre
+      # obs-studio
       networkmanagerapplet
-      pkgs.kdePackages.kdenlive
-      audacity
+      # pkgs.kdePackages.kdenlive
+      # audacity
       nixfmt
       # helvum
       normcap
@@ -165,10 +159,10 @@ in
       cosmic-store
       musescore
       muse-sounds-manager
-      handbrake
+      # handbrake
       trashy
-      archipelago
-      poptracker
+      # archipelago
+      # poptracker
 
       # system stuff, maybe modularize this later?
       usbutils

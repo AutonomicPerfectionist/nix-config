@@ -225,6 +225,19 @@ let
             inputs.agenix.nixosModules.default
           ];
         };
+
+        cursed-steel = mkConfiguration {
+          system = "x86_64-linux";
+          modules = [
+            ./hosts/cursed-steel/configuration.nix
+            inputs.disko.nixosModules.disko
+            inputs.nixos-hardware.nixosModules.common-cpu-amd
+            inputs.nixos-hardware.nixosModules.common-gpu-nvidia
+            inputs.nixos-hardware.nixosModules.common-pc-laptop
+            inputs.nixos-hardware.nixosModules.common-pc-ssd
+            inputs.agenix.nixosModules.default
+          ];
+        };
       };
 
       allHostNames = builtins.attrNames nixosConfigurations;

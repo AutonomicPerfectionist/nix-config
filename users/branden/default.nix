@@ -66,6 +66,10 @@ in
         inherit flake-inputs;
         userConfiguration = cfg;
       };
+      sharedModules = [
+        flake-inputs.niri.homeModules.niri
+        flake-inputs.noctalia.homeModules.default
+      ];
     };
   };
 }

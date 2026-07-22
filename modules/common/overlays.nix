@@ -361,6 +361,8 @@ in
     # Source swap: replaces every llama-cpp variant with the rgerganov fork
     # when services.llama.useCustomSource = true.
     [ customSourceOverlay ]
+
+    [ flake-inputs.niri.overlays.niri ]
   ];
 }
 

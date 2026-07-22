@@ -54,6 +54,7 @@ in
   # Users config
   userconfig.branden = {
     enable = true;
+    graphical = true;
     hostname = hostname;
   };
 

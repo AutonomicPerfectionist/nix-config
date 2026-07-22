@@ -44,6 +44,7 @@
     hostname = "big-nix";
   };
 
+  environment.pathsToLink = [ "/share/applications" "/share/xdg-desktop-portal" ];
   home-manager = {
     extraSpecialArgs = { inherit flake-inputs; };
     useGlobalPkgs = true;
@@ -56,6 +57,7 @@
 
   boot.kernelPackages = zfs.selectZfsCompatibleKernel { };
 
+  boot.zfs.extraPools = [ "archive" ];
   # Additional hardware and driver configuration
   hardware.graphics.enable = true;
   hardware.gpu.intel.enable = true;

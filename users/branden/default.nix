@@ -18,6 +18,7 @@ in
 
   options.userconfig.branden = {
     enable = lib.mkEnableOption "user branden";
+    graphical = lib.mkEnableOption "graphical desktop environment for user branden";
     hostname = lib.mkOption {
       defaultText = "hostname of the current system";
       type = lib.types.str;
@@ -66,7 +67,7 @@ in
         inherit flake-inputs;
         userConfiguration = cfg;
       };
-      sharedModules = [
+      sharedModules = lib.optionals cfg.graphical [
         flake-inputs.niri.homeModules.niri
         flake-inputs.noctalia.homeModules.default
       ];

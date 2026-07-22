@@ -1,7 +1,9 @@
 {
   config,
+  lib,
   pkgs,
   flake-inputs,
+  userConfiguration,
   ...
 }:
 let
@@ -12,7 +14,7 @@ let
 in
 
 {
-  imports = [
+  imports = lib.optionals userConfiguration.graphical [
     ./niri.nix
     ./noctalia.nix
   ];
@@ -83,6 +85,9 @@ in
     ast-grep
     just
     zellij
+    chafa
+    viu
+    timg
 
     # LSPs / dev tooling
     basedpyright
@@ -269,6 +274,7 @@ in
       lsa = "ls -alh";
       lg = "lazygit";
       zj = "zellij";
+      rsync-archive = "rsync -azhP --partial";
     };
 
     # Prettier help with auto paging
@@ -313,6 +319,11 @@ Editor:
 
 Markdown:
   glow file.md   → markdown preview
+
+Images:
+  chafa <file>   → image in terminal (any terminal)
+  viu <file>     → image with pixel protocol (kitty/wezterm)
+  timg <file>    → image/video/PDF preview
 
 Session:
   zellij         → terminal multiplexer

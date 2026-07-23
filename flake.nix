@@ -43,14 +43,16 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     niri.url = "github:sodiboo/niri-flake";
+
+    nix-amd-ai.url = "github:noamsto/nix-amd-ai";
   };
 
   outputs =
     { ... }@inputs:
-let
-  system = "x86_64-linux";
-  pkgs = inputs.nixpkgs.legacyPackages.${system};
-  mkConfiguration =
+    let
+      system = "x86_64-linux";
+      pkgs = inputs.nixpkgs.legacyPackages.${system};
+      mkConfiguration =
         { system, modules }:
         inputs.nixpkgs.lib.nixosSystem {
           inherit system;
@@ -254,7 +256,9 @@ let
           inherit pkgs;
 
           extraSpecialArgs = {
-            flake-inputs = inputs // { inherit system; };
+            flake-inputs = inputs // {
+              inherit system;
+            };
             pkgs-stable = import inputs.nixpkgs-stable {
               inherit system;
               config.allowUnfree = true;

@@ -7,6 +7,24 @@
 }:
 let
   hostname = "cursed-steel";
+
+  # XRT (Xilinx Runtime) userspace tools for AMD NPU
+  nix-amd-ai-pkgs = flake-inputs.nix-amd-ai.packages.${pkgs.stdenv.hostPlatform.system};
+  xrt-combined = pkgs.symlinkJoin {
+    name = "xrt-combined";
+    paths = [
+      nix-amd-ai-pkgs.xrt
+      nix-amd-ai-pkgs.xrt-plugin-amdxdna
+    ];
+  };
+
+  # AMD XDNA NPU out-of-tree kernel module
+  amdxdna-module = pkgs.callPackage ../../pkgs/amdxdna-driver {
+    kernel = pkgs.linuxPackages_latest.kernel;
+  };
+
+  # AMD XDNA NPU firmware from amd-ipu-staging branch
+  amdxdna-firmware = pkgs.callPackage ../../pkgs/amdxdna-firmware { };
 in
 {
   imports = [
@@ -65,6 +83,38 @@ in
   };
   hardware.nvidia.modesetting.enable = true;
 
+  # AMD NPU (XDNA 1) — out-of-tree kernel module + firmware + XRT userspace
+  boot.extraModulePackages = [ amdxdna-module ];
+  boot.kernelModules = [ "amdxdna" ];
+  boot.extraModprobeConfig = ''
+    install amdxdna ${pkgs.kmod}/bin/insmod /run/booted-system/kernel-modules/lib/modules/${pkgs.linuxPackages_latest.kernel.modDirVersion}/extra/amdxdna.ko
+  '';
+
+  hardware.firmware = [ amdxdna-firmware ];
+
+  services.udev.extraRules = ''
+    SUBSYSTEM=="accel", KERNEL=="accel[0-9]*", GROUP="video", MODE="0660"
+  '';
+
+  security.pam.loginLimits = [
+    {
+      domain = "*";
+      type = "hard";
+      item = "memlock";
+      value = "unlimited";
+    }
+    {
+      domain = "*";
+      type = "soft";
+      item = "memlock";
+      value = "unlimited";
+    }
+  ];
+
+  environment.sessionVariables = {
+    XILINX_XRT = "${xrt-combined}/opt/xilinx/xrt";
+  };
+
   # Bootloader.
   boot.loader.systemd-boot = {
     enable = true;
@@ -80,7 +130,8 @@ in
   # options usbhid mousepoll=8 jspoll=8 quirks=0x045e:0x028e:0x0400
   # '';
 
-
+  # cursed-steel only has 16GB DDR5, which is not enough for nix-index
+  services.swapspace.enable = true;
 
   networking.hostName = hostname;
 
@@ -104,7 +155,6 @@ in
     LC_TELEPHONE = "en_US.UTF-8";
     LC_TIME = "en_US.UTF-8";
   };
-
 
   # Configure keymap in X11
   services.xserver.xkb = {
@@ -170,6 +220,9 @@ in
       gnumake
       vulkan-tools
       iputils
+
+      # AMD NPU userspace tools (xrt-smi, xclbinutil, etc.)
+      xrt-combined
     ]
     ++ [
       ### packages from flakes ###
@@ -181,9 +234,6 @@ in
 
   services.openssh.enable = true;
   virtualisation.docker.enable = true;
-
-
-
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions

@@ -35,6 +35,7 @@
 
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
+  services.swapspace.enable = true;
   networking.networkmanager.enable = true;
   networking.firewall.enable = false;
   hardware.infiniband.enable = true;

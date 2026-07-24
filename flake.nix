@@ -72,38 +72,6 @@
 
       nixosConfigurations = {
 
-        hypergamma = mkConfiguration {
-          system = "x86_64-linux";
-          modules = [
-            ./hosts/hypergamma/configuration.nix
-            inputs.agenix.nixosModules.default
-          ];
-        };
-
-        goblin = mkConfiguration {
-          system = "x86_64-linux";
-          modules = [
-            ./hosts/goblin/configuration.nix
-            inputs.agenix.nixosModules.default
-          ];
-        };
-
-        aj-framework = mkConfiguration {
-          system = "x86_64-linux";
-          modules = [
-            ./hosts/aj-framework/configuration.nix
-            inputs.nixos-hardware.nixosModules.framework-12th-gen-intel
-          ];
-        };
-
-        lucy = mkConfiguration {
-          system = "x86_64-linux";
-          modules = [
-            ./hosts/lucy/configuration.nix
-            inputs.agenix.nixosModules.default
-          ];
-        };
-
         battle-bucket = mkConfiguration {
           system = "x86_64-linux";
           modules = [
@@ -179,17 +147,6 @@
             inputs.agenix.nixosModules.default
             # Add packages from this repo and set up binary cache
             inputs.mlnx-ofed-nixos.nixosModules.setupCacheAndOverlays
-            # Add configuration options from this repo
-            # inputs.mlnx-ofed-nixos.nixosModules.default
-            # Example configuration
-            # ({ config, ... }: {
-            #   hardware.mlnx-ofed = {
-            #     enable = true;
-            #     nvme.enable = true;
-            #     nfsrdma.enable = true;
-            #     kernel-mft.enable = true;
-            #   };
-            # })
           ];
         };
 

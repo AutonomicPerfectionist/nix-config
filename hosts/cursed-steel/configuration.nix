@@ -54,6 +54,7 @@ in
     ../../modules/graphical/niri.nix
     ../../modules/graphical/noctalia.nix
     ../../modules/cluster/mounts.nix
+    ../../modules/cluster/distributed.nix
 
   ];
 

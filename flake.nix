@@ -20,6 +20,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    comin = {
+      url = "github:nlewo/comin";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
 
     nixos-cli.url = "github:nix-community/nixos-cli";
@@ -78,6 +83,8 @@
             ./hosts/battle-bucket/configuration.nix
             inputs.disko.nixosModules.disko
             inputs.agenix.nixosModules.default
+            inputs.comin.nixosModules.comin
+            ./modules/comin.nix
           ];
         };
 
@@ -86,6 +93,8 @@
           modules = [
             ./hosts/big-nix/configuration.nix
             inputs.agenix.nixosModules.default
+            inputs.comin.nixosModules.comin
+            ./modules/comin.nix
           ];
         };
 
@@ -95,6 +104,8 @@
             ./hosts/thunder-budget/thunder-budget-1/configuration.nix
             inputs.disko.nixosModules.disko
             inputs.agenix.nixosModules.default
+            inputs.comin.nixosModules.comin
+            ./modules/comin.nix
           ];
         };
 
@@ -104,6 +115,8 @@
             ./hosts/thunder-budget/thunder-budget-2/configuration.nix
             inputs.disko.nixosModules.disko
             inputs.agenix.nixosModules.default
+            inputs.comin.nixosModules.comin
+            ./modules/comin.nix
           ];
         };
         thunder-budget-3 = mkConfiguration {
@@ -111,6 +124,8 @@
           modules = [
             ./hosts/thunder-budget/thunder-budget-3/configuration.nix
             inputs.agenix.nixosModules.default
+            inputs.comin.nixosModules.comin
+            ./modules/comin.nix
           ];
         };
 
@@ -119,6 +134,8 @@
           modules = [
             ./hosts/thunder-budget/thunder-budget-4/configuration.nix
             inputs.agenix.nixosModules.default
+            inputs.comin.nixosModules.comin
+            ./modules/comin.nix
           ];
         };
 
@@ -128,6 +145,8 @@
             ./hosts/arid-wind/configuration.nix
             inputs.disko.nixosModules.disko
             inputs.agenix.nixosModules.default
+            inputs.comin.nixosModules.comin
+            ./modules/comin.nix
           ];
         };
 
@@ -137,6 +156,8 @@
             ./hosts/fatman/fatman-1/configuration.nix
             inputs.disko.nixosModules.disko
             inputs.agenix.nixosModules.default
+            inputs.comin.nixosModules.comin
+            ./modules/comin.nix
           ];
         };
         fatman-2 = mkConfiguration {
@@ -145,6 +166,8 @@
             ./hosts/fatman/fatman-2/configuration.nix
             inputs.disko.nixosModules.disko
             inputs.agenix.nixosModules.default
+            inputs.comin.nixosModules.comin
+            ./modules/comin.nix
             # Add packages from this repo and set up binary cache
             inputs.mlnx-ofed-nixos.nixosModules.setupCacheAndOverlays
           ];
@@ -156,6 +179,8 @@
             ./hosts/fatman/fatman-3/configuration.nix
             inputs.disko.nixosModules.disko
             inputs.agenix.nixosModules.default
+            inputs.comin.nixosModules.comin
+            ./modules/comin.nix
           ];
         };
         fatman-4 = mkConfiguration {
@@ -164,6 +189,8 @@
             ./hosts/fatman/fatman-4/configuration.nix
             inputs.disko.nixosModules.disko
             inputs.agenix.nixosModules.default
+            inputs.comin.nixosModules.comin
+            ./modules/comin.nix
           ];
         };
 
@@ -173,6 +200,8 @@
             ./hosts/blue/king-blue/configuration.nix
             inputs.disko.nixosModules.disko
             inputs.agenix.nixosModules.default
+            inputs.comin.nixosModules.comin
+            ./modules/comin.nix
           ];
         };
 
@@ -182,6 +211,8 @@
             ./hosts/blue/queen-blue/configuration.nix
             inputs.disko.nixosModules.disko
             inputs.agenix.nixosModules.default
+            inputs.comin.nixosModules.comin
+            ./modules/comin.nix
           ];
         };
 
@@ -195,6 +226,8 @@
             inputs.nixos-hardware.nixosModules.common-pc-laptop
             inputs.nixos-hardware.nixosModules.common-pc-ssd
             inputs.agenix.nixosModules.default
+            inputs.comin.nixosModules.comin
+            ./modules/comin.nix
           ];
         };
       };

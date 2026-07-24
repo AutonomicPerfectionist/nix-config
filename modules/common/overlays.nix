@@ -356,7 +356,7 @@ in
     [ noHaddockOverlay ]
 
     # llm-agents nixpkgs overlay from its own flake input.
-    [ flake-inputs.llm-agents.overlays.default ]
+    [ flake-inputs.llm-agents.overlays.shared-nixpkgs ]
 
     # Source swap: replaces every llama-cpp variant with the rgerganov fork
     # when services.llama.useCustomSource = true.

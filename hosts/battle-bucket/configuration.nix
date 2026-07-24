@@ -38,6 +38,7 @@ in
     ../../modules/graphical
     ../../modules/graphical/niri.nix
     ../../modules/graphical/noctalia.nix
+    ../../modules/cluster/mounts.nix
 
     # local modules
     # ./tailscale.nix

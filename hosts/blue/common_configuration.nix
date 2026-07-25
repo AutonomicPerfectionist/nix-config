@@ -11,6 +11,7 @@
     ../../modules/cluster/mounts.nix
     ../../modules/cluster/management.nix
     ../../modules/cluster/distributed.nix
+    ../../modules/cluster/rdma.nix
     ../../modules/input-methods.nix
     ../../modules/ml/llama.nix
     ../../hardware/gpus/gpus.nix
@@ -41,6 +42,7 @@
   hardware.gpu.nvidia.enable = true;
   # The Titan V has the exact same chip as the V100
   hardware.gpu.nvidia.cards = [ "tesla_v100" ];
+  cluster.rdma.enable = true;
 
   networking.networkmanager.enable = true;
   networking.firewall.enable = false;

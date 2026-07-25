@@ -16,6 +16,7 @@
     ../../modules/common/overlays.nix
     ../../modules/cluster/mounts.nix
     ../../modules/cluster/management.nix
+    ../../modules/cluster/rdma.nix
     ../../modules/cluster/distributed.nix
     ../../hardware/gpus/gpus.nix
     flake-inputs.home-manager.nixosModules.default
@@ -61,6 +62,7 @@
   # Additional hardware and driver configuration
   hardware.graphics.enable = true;
   hardware.gpu.intel.enable = true;
+  cluster.rdma.enable = true;
 
   scl.overlays.sycl-intel = true;
 

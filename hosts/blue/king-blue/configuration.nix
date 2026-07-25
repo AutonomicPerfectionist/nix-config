@@ -20,5 +20,5 @@
 
   networking.hostName = "king-blue";
 
-  scl.overlays.sycl-intel = true;
+  scl.overlays.sycl-intel = false;
 }

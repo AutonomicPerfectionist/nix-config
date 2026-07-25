@@ -17,6 +17,7 @@
     ../../modules/cluster/mounts.nix
     ../../modules/cluster/management.nix
     ../../modules/cluster/distributed.nix
+    ../../modules/cluster/rdma.nix
     ../../modules/input-methods.nix
     ../../hardware/gpus/gpus.nix
     flake-inputs.home-manager.nixosModules.default
@@ -54,6 +55,7 @@
   networking.networkmanager.enable = true;
   networking.firewall.enable = false;
   hardware.infiniband.enable = true;
+  cluster.rdma.enable = true;
 
   nixpkgs.config.allowUnfree = true;
 

@@ -136,6 +136,7 @@ in
   services.swapspace.enable = true;
 
   networking.hostName = hostname;
+  networking.firewall.enable = false;
 
   # Enable networking
   networking.networkmanager.enable = true;

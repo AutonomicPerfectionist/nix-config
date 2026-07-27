@@ -116,6 +116,7 @@ in
   environment.sessionVariables = {
     XILINX_XRT = "${xrt-combined}/opt/xilinx/xrt";
   };
+  services.swapspace.enable = true;
 
   # Bootloader.
   boot.loader.systemd-boot = {

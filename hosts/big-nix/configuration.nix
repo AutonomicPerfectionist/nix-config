@@ -21,6 +21,8 @@
     ../../modules/zfs.nix
   ];
 
+  scl.monitoring.server.enable = true;
+
   userconfig.branden = {
     enable = true;
     hostname = "big-nix";

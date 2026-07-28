@@ -12,7 +12,10 @@
     ../nix-settings.nix
     ../avahi.nix
     ../../users/branden
+    ../monitoring
   ];
+
+  scl.monitoring.enable = true;
 
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;

@@ -7,6 +7,23 @@
 let
   inherit (lib) mkIf mkEnableOption mkOption types;
   cfg = config.scl.monitoring;
+
+  # https://grafana.com/grafana/dashboards/1860-node-exporter-full/
+  nodeExporterFullDashboard = pkgs.fetchurl {
+    url = "https://grafana.com/api/dashboards/1860/revisions/45/download";
+    sha256 = "11hrll7fm626ikbva5md4gm0rca537vp4xsxa9sxl1pk15s6nk0q";
+  };
+
+  dashboardsDir = pkgs.linkFarm "grafana-dashboards" [
+    {
+      name = "node-exporter-full.json";
+      path = nodeExporterFullDashboard;
+    }
+    {
+      name = "cluster-overview.json";
+      path = ./dashboards/cluster-overview.json;
+    }
+  ];
 in
 {
   options.scl.monitoring = {
@@ -48,6 +65,7 @@ in
       scrapeConfigs = [
         {
           job_name = "node";
+          scrape_interval = "20s";
           static_configs = [
             {
               targets = [
@@ -107,6 +125,12 @@ in
             access = "proxy";
             url = "http://localhost:${toString config.services.prometheus.port}";
             isDefault = true;
+          }
+        ];
+        dashboards.settings.providers = [
+          {
+            name = "default";
+            options.path = dashboardsDir;
           }
         ];
       };

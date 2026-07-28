@@ -1,20 +1,11 @@
 {
-  # Fatman-3 - Cluster compute node with AMD GPU and InfiniBand
   config,
   pkgs,
   flake-inputs,
   ...
 }:
 {
-
- nix.settings.system-features = ["nixos-test" "benchmark" "big-parallel" "kvm" "gccarch-ivybridge"];
-       # nixpkgs.hostPlatform = {
-       #   gcc.arch = "ivybridge";
-       #   gcc.tune = "ivybridge";
-       #   system = "x86_64-linux";
-       # };
-    imports = [
-      
+  imports = [
     ./hardware-configuration.nix
     ./disk-config.nix
     ../common_configuration.nix
@@ -30,7 +21,6 @@
   hardware.graphics.enable = true;
   hardware.gpu.nvidia.enable = true;
   hardware.gpu.nvidia.cards = [ "tesla_v100" ];
-  # enableRocmSupport = true;
 
   services.llama.useCustomSource = true;
   services.llama.rpcServer.enable = true;

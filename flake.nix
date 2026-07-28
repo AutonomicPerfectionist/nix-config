@@ -61,7 +61,7 @@
         { system, modules }:
         inputs.nixpkgs.lib.nixosSystem {
           inherit system;
-          inherit modules;
+          modules = [ ./modules/common/base.nix ] ++ modules;
 
           specialArgs = {
             pkgs-stable = import inputs.nixpkgs-stable {

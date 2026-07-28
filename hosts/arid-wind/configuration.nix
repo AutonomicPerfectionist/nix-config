@@ -1,5 +1,4 @@
 {
-  # Arid-wind - Cluster compute node with AMD GPU
   config,
   pkgs,
   flake-inputs,
@@ -7,22 +6,14 @@
 }:
 {
   imports = [
-    # Include the results of the hardware scan.
     ./hardware-configuration.nix
-    ../../modules/nix-settings.nix
     ../../modules/compute.nix
-    ../../modules/common/overlays.nix
     ../../modules/ml/llama.nix
     ../../modules/cluster/mounts.nix
     ../../modules/cluster/management.nix
     ../../modules/cluster/distributed.nix
-    ../../modules/avahi.nix
     ../../hardware/gpus/gpus.nix
     ./disk-config.nix
-    flake-inputs.home-manager.nixosModules.default
-
-    # Users
-    ../../users/branden
   ];
 
   userconfig.branden = {
@@ -36,26 +27,13 @@
     "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC5fdkXww9okIJ/3leprxCkUaoQtwjI8hppcGnihFwscXiYcht0p5UhFq1S4byTl/HdlhHrRX+qnmlFe2Y7eE9As/6BpyYgBkbaZ3e2cdgZ7DUmh9P2o3N9bTImSvLA0UWDy7OzJ5MbYV1VQPhJlJXW/vcpD6MBOBAeFrRIJuB1DQq7tS66tKgAC8JN8ABV6jk9ioc+OVZLyatvcF28QBrFgoErKFwlVXx3VJro2LVD8wvhiddnx/05pv5P4FkmYTyDT7IDcJijMui5MOCQ7nDjtpH602oUQum8E6+mCDGPN51D1Up5vvN+5HbuH0wuzvWW0l3kunJaeGmNpxrn4py0lWOOmA09HYEfbidjZjpXIAA3evPuWPZmwcFRNF9rciuSDx0OW3xwHs0lav64j3nEM8ib9nhoUu1Iz3GssSyMrW8/Fh1KX2r6ISTWU5tjbcqKK2fIS7wTDWOLf7Is90AHIaBeLULQ5EZzraNSIcxDT+ITIQ10RY4iuzm/sZCJmKc= branden@ryzen-desktop"
   ];
 
-  home-manager = {
-    extraSpecialArgs = { inherit flake-inputs; };
-    useGlobalPkgs = true;
-    useUserPackages = true;
-  };
-
-  # Bootloader.
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
-
-  boot.kernelPackages = pkgs.linuxPackages_latest;
-
   swapDevices = [
     {
       device = "/swapfile";
-      size = 16 * 1024; # 16GB
+      size = 16 * 1024;
     }
   ];
 
-  # Additional hardware and driver configuration
   hardware.graphics.enable = true;
   hardware.gpu.amd.enable = true;
   enableRocmSupport = true;
@@ -63,92 +41,24 @@
     "gfx1030"
   ];
 
-  # Container configuration
   virtualisation.podman.enable = true;
   virtualisation.oci-containers.backend = "podman";
 
   networking.hostName = "arid-wind";
-  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
-  # Configure network proxy if necessary
-  # networking.proxy.default = "http://user:password@proxy:port/";
-  # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
-
-  # Enable networking
-  networking.networkmanager.enable = true;
-  networking.firewall.enable = false;
-
-  # Set your time zone.
-  time.timeZone = "America/Chicago";
-
-  # Select internationalisation properties.
-  i18n.defaultLocale = "en_US.UTF-8";
-
-  i18n.extraLocaleSettings = {
-    LC_ADDRESS = "en_US.UTF-8";
-    LC_IDENTIFICATION = "en_US.UTF-8";
-    LC_MEASUREMENT = "en_US.UTF-8";
-    LC_MONETARY = "en_US.UTF-8";
-    LC_NAME = "en_US.UTF-8";
-    LC_NUMERIC = "en_US.UTF-8";
-    LC_PAPER = "en_US.UTF-8";
-    LC_TELEPHONE = "en_US.UTF-8";
-    LC_TIME = "en_US.UTF-8";
+  services.openssh.settings = {
+    X11Forwarding = true;
   };
 
-  # Configure keymap in X11
-  services.xserver.xkb = {
-    layout = "us";
-    variant = "";
-  };
+  services.llama.rpcServer.enable = true;
+  services.llama.useCustomSource = true;
 
-  # Allow unfree packages
-  nixpkgs.config.allowUnfree = true;
-
-  # List packages installed in system profile. To search, run:
-  # $ nix search wget
   environment.systemPackages = with pkgs; [
-    #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
-    #  wget
     git
     micro
     htop
     xclip
   ];
 
-  # Some programs need SUID wrappers, can be configured further or are
-  # started in user sessions.
-  # programs.mtr.enable = true;
-  # programs.gnupg.agent = {
-  #   enable = true;
-  #   enableSSHSupport = true;
-  # };
-
-  # List services that you want to enable:
-
-  # Enable the OpenSSH daemon.
-  services.openssh.enable = true;
-  services.llama.rpcServer.enable = true;
-  services.llama.useCustomSource = true;
-  # Vulkan apparently mitigates the memory leak
-  # services.llama.preferVulkan = true;
-
-  services.openssh.settings = {
-    X11Forwarding = true;
-  };
-
-  # Open ports in the firewall.
-  # networking.firewall.allowedTCPPorts = [ ... ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # Or disable the firewall altogether.
-  # networking.firewall.enable = false;
-
-  # This value determines the NixOS release from which the default
-  # settings for stateful data, like file locations and database versions
-  # on your system were taken. It's perfectly fine and recommended to leave
-  # this value at the release version of the first install of this system.
-  # Before changing this value read the documentation for this option
-  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "25.11"; # Did you read the comment?
-
+  system.stateVersion = "25.11";
 }

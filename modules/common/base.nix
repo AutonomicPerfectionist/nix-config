@@ -1,14 +1,26 @@
 {
   config,
   lib,
+  pkgs,
   flake-inputs,
   ...
 }:
 {
+  imports = [
+    flake-inputs.home-manager.nixosModules.default
+    ./overlays.nix
+    ../nix-settings.nix
+    ../avahi.nix
+    ../../users/branden
+  ];
+
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
+  boot.kernelPackages = lib.mkDefault pkgs.linuxPackages_latest;
+
   networking.networkmanager.enable = true;
+  networking.firewall.enable = false;
 
   time.timeZone = "America/Chicago";
 
@@ -26,9 +38,12 @@
     LC_TIME = "en_US.UTF-8";
   };
 
-  nixpkgs.config.allowUnfree = true;
+  services.xserver.xkb = {
+    layout = "us";
+    variant = "";
+  };
 
-  boot.kernelPackages = lib.mkDefault config.pkgs.linuxPackages_latest;
+  nixpkgs.config.allowUnfree = true;
 
   services.openssh.enable = true;
 

@@ -1,5 +1,4 @@
 {
-  # Hypergamma - Desktop workstation with AMD GPU, multiple DE support
   config,
   pkgs,
   pkgs-stable,
@@ -11,26 +10,13 @@ let
 in
 {
   imports = [
-    flake-inputs.home-manager.nixosModules.default
-    # Same config as G7 oddly enough
     flake-inputs.nixos-hardware.nixosModules.dell-g3-3779
     ./hardware-configuration.nix
     ./disk-config.nix
     ../../hardware/gpus/nvidia.nix
 
-    # USERS (make sure there's at least one!!)
-    ../../users/branden
-
-    # CUSTOM MODULES
-    ../../modules/nix-settings.nix
     ../../modules/distributed-builds.nix
-    ../../modules/common/overlays.nix
-    ../../modules/avahi.nix
-    # ../../modules/amdgpu.nix
     ../../modules/gnome.nix
-    # ../../modules/cosmic.nix
-    # ../../modules/hyprland.nix
-    # ../../modules/gaming.nix
     ../../modules/gnupg.nix
     ../../modules/flatpak.nix
     ../../modules/nix-ld.nix
@@ -40,47 +26,23 @@ in
     ../../modules/graphical/noctalia.nix
     ../../modules/cluster/mounts.nix
     ../../modules/cluster/distributed.nix
-
-    # local modules
-    # ./tailscale.nix
-    # ./frpc.nix
   ];
 
-  # Graphical desktop
   scl.graphical = {
     enable = true;
     niri.enable = true;
     noctalia.enable = true;
   };
 
-  # Users config
   userconfig.branden = {
     enable = true;
     graphical = true;
     hostname = hostname;
   };
 
-  home-manager = {
-    extraSpecialArgs = { inherit flake-inputs; };
-    useGlobalPkgs = true;
-    useUserPackages = true;
-  };
   hardware.gpu.nvidia.enable = true;
-  # Bootloader.
-  boot.loader.systemd-boot = {
-    enable = true;
-    configurationLimit = 8;
-  };
-  boot.loader.efi.canTouchEfiVariables = true;
 
-  # set kernel version
-  boot.kernelPackages = pkgs.linuxPackages_latest;
-
-  # set kernel module params
-  # boot.extraModprobeConfig = ''
-  # options usbhid mousepoll=8 jspoll=8 quirks=0x045e:0x028e:0x0400
-  # '';
-
+  boot.loader.systemd-boot.configurationLimit = 8;
 
   services.udev.extraRules = ''
     SUBSYSTEM=="usbmon", GROUP="wireshark", MODE="0640"
@@ -88,45 +50,8 @@ in
 
   networking.hostName = hostname;
 
-  # Enable networking
-  networking.networkmanager.enable = true;
-  networking.firewall.enable = false;
-
-  # Set your time zone.
-  time.timeZone = "America/Chicago";
-
-  # Select internationalisation properties.
-  i18n.defaultLocale = "en_US.UTF-8";
-
-  i18n.extraLocaleSettings = {
-    LC_ADDRESS = "en_US.UTF-8";
-    LC_IDENTIFICATION = "en_US.UTF-8";
-    LC_MEASUREMENT = "en_US.UTF-8";
-    LC_MONETARY = "en_US.UTF-8";
-    LC_NAME = "en_US.UTF-8";
-    LC_NUMERIC = "en_US.UTF-8";
-    LC_PAPER = "en_US.UTF-8";
-    LC_TELEPHONE = "en_US.UTF-8";
-    LC_TIME = "en_US.UTF-8";
-  };
-
-
-  # Configure keymap in X11
-  services.xserver.xkb = {
-    layout = "us";
-    variant = "";
-  };
-
-  # Install firefox.
   programs.firefox.enable = true;
 
-  # Allow unfree packages
-  nixpkgs.config = {
-    allowUnfree = true;
-  };
-
-  # List packages installed in system profile. To search, run:
-  # $ nix search wget
   environment.systemPackages =
     with pkgs;
     [
@@ -139,36 +64,20 @@ in
       dig
       traceroute
       nmap
-      # ungoogled-chromium
       vesktop
-      # brave
       pavucontrol
-      # parsec-bin
-      # godot_4
-      # wireshark
       qbittorrent
-      # rpcs3
-      # pcsx2
       libreoffice
-      # calibre
-      # obs-studio
       networkmanagerapplet
-      # pkgs.kdePackages.kdenlive
-      # audacity
       nixfmt
-      # helvum
       normcap
       gnome-frog
       gImageReader
       cosmic-store
       musescore
       muse-sounds-manager
-      # handbrake
       trashy
-      # archipelago
-      # poptracker
 
-      # system stuff, maybe modularize this later?
       usbutils
       sysfsutils
       libinput
@@ -177,24 +86,15 @@ in
       iputils
     ]
     ++ [
-      ### packages from flakes ###
       flake-inputs.agenix.packages.${flake-inputs.system}.default
     ];
+
   programs.zoom-us.enable = true;
 
-  # Services
-
-  services.openssh.enable = true;
+  services.openssh.settings = {
+    X11Forwarding = true;
+  };
   virtualisation.docker.enable = true;
 
-
-
-
-  # This value determines the NixOS release from which the default
-  # settings for stateful data, like file locations and database versions
-  # on your system were taken. It's perfectly fine and recommended to leave
-  # this value at the release version of the first install of this system.
-  # Before changing this value read the documentation for this option
-  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "23.11";
 }

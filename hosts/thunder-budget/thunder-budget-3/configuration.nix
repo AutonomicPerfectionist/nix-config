@@ -1,13 +1,11 @@
 {
-  # Thunder-budget-3 - Cluster compute node with InfiniBand
   config,
   pkgs,
   flake-inputs,
   ...
 }:
 {
-    imports = [
-      
+  imports = [
     ./hardware-configuration.nix
     ../common_configuration.nix
   ];

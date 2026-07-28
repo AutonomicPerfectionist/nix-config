@@ -1,13 +1,11 @@
 {
-  # King-blue - Cluster compute node with Intel Arc GPU
   config,
   pkgs,
   flake-inputs,
   ...
 }:
 {
-    imports = [
-      
+  imports = [
     ./hardware-configuration.nix
     ./disk-config.nix
     ../common_configuration.nix

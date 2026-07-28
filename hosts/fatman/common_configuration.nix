@@ -6,24 +6,15 @@
 }:
 {
   imports = [
-    ../../modules/nix-settings.nix
-    ../../modules/avahi.nix
     ../../modules/compute.nix
     ../../modules/ml/llama.nix
     ../../modules/distributed-builds.nix
-    ../../modules/ml/llama.nix
-    ../../modules/distributed-builds.nix
-    ../../modules/common/overlays.nix
     ../../modules/cluster/mounts.nix
     ../../modules/cluster/management.nix
     ../../modules/cluster/distributed.nix
     ../../modules/cluster/rdma.nix
-    ../../modules/input-methods.nix
     ../../hardware/gpus/gpus.nix
-    flake-inputs.home-manager.nixosModules.default
 
-    # Users
-    ../../users/branden
     ../../users/remotebuild
   ];
 
@@ -40,24 +31,18 @@
     }
   ];
 
-  home-manager = {
-    extraSpecialArgs = { inherit flake-inputs; };
-    useGlobalPkgs = true;
-    useUserPackages = true;
-  };
-
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
-
   # Kernel 6.12 has the ib_qib module needed for the infiniband cards
   boot.kernelPackages = pkgs.linuxPackages_6_12;
 
-  networking.networkmanager.enable = true;
-  networking.firewall.enable = false;
   hardware.infiniband.enable = true;
   cluster.rdma.enable = true;
-
-  nixpkgs.config.allowUnfree = true;
+  nix.settings.system-features = [
+    "nixos-test"
+    "benchmark"
+    "big-parallel"
+    "kvm"
+    "gccarch-ivybridge"
+  ];
 
   environment.systemPackages = with pkgs; [
     git
@@ -65,8 +50,6 @@
     htop
     xclip
   ];
-
-  services.openssh.enable = true;
 
   system.stateVersion = "25.11";
 }

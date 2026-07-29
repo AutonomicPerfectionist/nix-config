@@ -53,7 +53,8 @@ in
     nerd-fonts.fira-code
     python314Packages.clustershell
     nix-ld
-    # devenv
+    devenv
+    direnv
     mosh
     llm-agents.claude-code
 

@@ -29,6 +29,7 @@ in
     ./disk-config.nix
     ../../hardware/gpus/nvidia.nix
 
+    ../../modules/battery.nix
     ../../modules/distributed-builds.nix
     ../../modules/gnome.nix
     ../../modules/gnupg.nix
@@ -46,6 +47,11 @@ in
     enable = true;
     niri.enable = true;
     noctalia.enable = true;
+  };
+
+  scl.battery = {
+    enable = true;
+    chargeLimit = 80;
   };
 
   userconfig.branden = {

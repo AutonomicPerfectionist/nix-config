@@ -234,6 +234,56 @@
 
       allHostNames = builtins.attrNames nixosConfigurations;
 
+      # Factory for standalone (non-NixOS) home-manager configurations.
+      # Add one entry per machine to homeConfigurations below.
+      #
+      # Arguments:
+      #   graphical   — import niri + noctalia modules and config (default true)
+      #   nvidia      — attrset passed to targets.genericLinux.gpu.nvidia, or
+      #                 null to skip (default null); set version + sha256 to
+      #                 match the driver installed by the host OS
+      #   llamaBackend — "cpu" | "cuda" | "rocm" | "sycl" (default "cpu")
+      mkHomeConfig =
+        {
+          graphical ? true,
+          nvidia ? null,
+          llamaBackend ? "cpu",
+        }:
+        inputs.home-manager.lib.homeManagerConfiguration {
+          inherit pkgs;
+
+          extraSpecialArgs = {
+            flake-inputs = inputs // { inherit system; };
+            pkgs-stable = import inputs.nixpkgs-stable {
+              inherit system;
+              config.allowUnfree = true;
+            };
+            userConfiguration = {
+              enable    = true;
+              graphical = graphical;
+            };
+          };
+
+          modules =
+            [ ./users/branden/home/home.nix ]
+            ++ pkgs.lib.optionals graphical [
+              inputs.niri.homeModules.niri
+              inputs.noctalia.homeModules.default
+            ]
+            ++ [
+              {
+                targets.genericLinux.enable = true;
+                nixpkgs.config.allowUnfree = true;
+                nixpkgs.config.nvidia.acceptLicense = true;
+                services.llama.backend = llamaBackend;
+                services.llama.enableHomePackage = true;
+              }
+            ]
+            ++ pkgs.lib.optionals (nvidia != null) [
+              { targets.genericLinux.gpu.nvidia = nvidia; }
+            ];
+        };
+
     in
     {
       inherit nixosConfigurations;
@@ -241,35 +291,30 @@
       lib = {
         nixosHostNames = allHostNames;
       };
+
+      # Standalone home-manager configurations — one entry per non-NixOS machine.
+      # Run:  home-manager switch -b backup --flake ~/.nix#"branden@<hostname>"
       homeConfigurations = {
-        branden = inputs.home-manager.lib.homeManagerConfiguration {
-          inherit pkgs;
-
-          extraSpecialArgs = {
-            flake-inputs = inputs // {
-              inherit system;
-            };
-            pkgs-stable = import inputs.nixpkgs-stable {
-              inherit system;
-              config.allowUnfree = true;
-            };
+        "branden@ryzen-desktop" = mkHomeConfig {
+          graphical    = true;
+          llamaBackend = "cuda";
+          nvidia = {
+            enable  = true;
+            version = "595.71.05";
+            sha256  = "sha256-NiA7iWC35JyKQva6H1hjzeNKBek9KyS3mK8G3YRva4I=";
           };
-
-          modules = [
-            ./users/branden/home/home.nix
-            {
-              targets.genericLinux.enable = true;
-
-              nixpkgs.config.allowUnfree = true;
-              nixpkgs.config.nvidia.acceptLicense = true;
-              targets.genericLinux.gpu.nvidia = {
-                enable = true;
-                version = "595.71.05";
-                sha256 = "sha256-NiA7iWC35JyKQva6H1hjzeNKBek9KyS3mK8G3YRva4I=";
-              };
-            }
-          ];
         };
+
+        # Template for additional machines — copy, rename, and adjust:
+        # "branden@other-machine" = mkHomeConfig {
+        #   graphical    = true;
+        #   llamaBackend = "cuda";
+        #   nvidia = {
+        #     enable  = true;
+        #     version = "570.xx.xx";
+        #     sha256  = "sha256-...";
+        #   };
+        # };
       };
     };
 }

@@ -17,7 +17,11 @@ in
   imports = lib.optionals userConfiguration.graphical [
     ./niri.nix
     ./noctalia.nix
+  ] ++ [
+    ../../../modules/ml/llama-hm.nix
+    ../../../modules/common/overlays.nix
   ];
+  services.llama.useCustomSource = true;
 
   # Home Manager needs a bit of information about you and the
   # paths it should manage.
@@ -55,6 +59,7 @@ in
     nix-ld
     devenv
     direnv
+    llm-agents.omp
     mosh
     llm-agents.claude-code
 

@@ -97,6 +97,16 @@
             ./modules/comin.nix
           ];
         };
+        hot-rod = mkConfiguration {
+          system = "x86_64-linux";
+          modules = [
+            ./hosts/hot-rod/configuration.nix
+            inputs.disko.nixosModules.disko
+            inputs.agenix.nixosModules.default
+            inputs.comin.nixosModules.comin
+            ./modules/comin.nix
+          ];
+        };
 
         thunder-budget-1 = mkConfiguration {
           system = "x86_64-linux";

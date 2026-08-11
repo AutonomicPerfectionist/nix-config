@@ -39,6 +39,14 @@ let
       # CUDA compute capability for Tesla V100
       cudaCapabilities = [ "7.0" ];
     };
+
+    rtx_3090 = {
+      # Ampere-generation cards use the stable driver branch
+      driver = "stable";
+
+      # CUDA compute capability for RTX 3090
+      cudaCapabilities = [ "8.6" ];
+    };
   };
 
   # Driver preference order.

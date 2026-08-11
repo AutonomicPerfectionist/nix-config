@@ -17,6 +17,7 @@ in
   imports = lib.optionals userConfiguration.graphical [
     ./niri.nix
     ./noctalia.nix
+    ./kitty.nix
   ];
 
   # Home Manager needs a bit of information about you and the

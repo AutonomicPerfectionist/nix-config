@@ -241,15 +241,12 @@ in
               --port ${toString cfg.port}
           '';
           Restart     = "on-failure";
-          # Runs as a transient user; no home directory or persistent UID needed.
           DynamicUser = true;
         } // gpuServiceConfig;
       };
     })
 
     # ── RPC server ───────────────────────────────────────────────────────
-    # Listens on all interfaces so remote workers can connect.
-    # Firewall rules are the caller's responsibility.
     (lib.mkIf cfg.rpcServer.enable {
       systemd.services.llama-rpc = {
         description = "llama.cpp RPC server";

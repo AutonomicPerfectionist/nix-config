@@ -26,6 +26,7 @@ in
 {
   environment.systemPackages = [
     openmpi-fixed
+    openmpi-fixed.dev
     prrte-fixed
   ];
   security.pam.loginLimits = [

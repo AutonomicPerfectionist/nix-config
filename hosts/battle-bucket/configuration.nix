@@ -13,6 +13,7 @@ in
     flake-inputs.nixos-hardware.nixosModules.dell-g3-3779
     ./hardware-configuration.nix
     ./disk-config.nix
+    ./tailscale.nix
     ../../hardware/gpus/nvidia.nix
 
     ../../modules/battery.nix

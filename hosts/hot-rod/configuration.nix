@@ -12,6 +12,7 @@ in
   imports = [
     ./hardware-configuration.nix
     ./disk-config.nix
+    ./tailscale.nix
     ../../hardware/gpus/nvidia.nix
 
     ../../modules/distributed-builds.nix

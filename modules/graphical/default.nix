@@ -24,5 +24,9 @@
     services.printing.enable = true;
 
     xdg.portal.enable = true;
+
+    programs.chromium = {
+      enable = true;
+    };
   };
 }

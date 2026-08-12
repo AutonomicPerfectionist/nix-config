@@ -8,20 +8,25 @@
 }:
 let
   hostsList =
-    if flake-inputs ? nixosConfigurations
-    then builtins.concatStringsSep " " (builtins.attrNames flake-inputs.nixosConfigurations)
-    else "hypergamma goblin aj-framework lucy big-nix thunder-budget-3 thunder-budget-4 arid-wind fatman-3 king-blue queen-blue";
+    if flake-inputs ? nixosConfigurations then
+      builtins.concatStringsSep " " (builtins.attrNames flake-inputs.nixosConfigurations)
+    else
+      "hypergamma goblin aj-framework lucy big-nix thunder-budget-3 thunder-budget-4 arid-wind fatman-3 king-blue queen-blue";
 in
 
 {
-  imports = lib.optionals userConfiguration.graphical [
-    ./niri.nix
-    ./noctalia.nix
-    ./kitty.nix
-  ] ++ [
-    ../../../modules/ml/llama-hm.nix
-    ../../../modules/common/overlays.nix
-  ];
+  imports =
+    lib.optionals userConfiguration.graphical [
+      ./niri.nix
+      ./noctalia.nix
+      ./kitty.nix
+      ./slack.nix
+      ./vscode.nix
+    ]
+    ++ [
+      ../../../modules/ml/llama-hm.nix
+      ../../../modules/common/overlays.nix
+    ];
   services.llama.useCustomSource = true;
 
   # Home Manager needs a bit of information about you and the
@@ -129,21 +134,21 @@ in
   xdg.configFile."lazygit/config.yml" = {
     force = true;
     text = ''
-    customCommands:
-      - key: "D"
-        context: "files"
-        command: "git diff --ext-diff -- {{.SelectedFile.Name}}"
-        output: terminal
-        description: "Semantic diff (difftastic)"
+      customCommands:
+        - key: "D"
+          context: "files"
+          command: "git diff --ext-diff -- {{.SelectedFile.Name}}"
+          output: terminal
+          description: "Semantic diff (difftastic)"
 
-      - key: "<c-d>"
-        context: "commits"
-        command: "git -c diff.external=difft show {{.SelectedCommit.Sha}}"
-        output: terminal
-        description: "Semantic commit diff"
-  '';
+        - key: "<c-d>"
+          context: "commits"
+          command: "git -c diff.external=difft show {{.SelectedCommit.Sha}}"
+          output: terminal
+          description: "Semantic commit diff"
+    '';
   };
- 
+
   programs.git.enable = true;
   programs.git.settings = {
     user.name = "Branden Butler";
@@ -228,7 +233,6 @@ in
     enableZshIntegration = true;
   };
 
-
   programs.zsh = {
     enable = true;
     enableVteIntegration = true;
@@ -291,107 +295,107 @@ in
 
     # NixOS switch function with completion
     initContent = ''
-      # =========================
-      # DEV CHEATSHEET
-      # =========================
-      dev-cheatsheet() {
-        cat <<'EOF'
+            # =========================
+            # DEV CHEATSHEET
+            # =========================
+            dev-cheatsheet() {
+              cat <<'EOF'
 
-Navigation:
-  z <dir>        → smart cd (zoxide)
-  zi             → interactive directory jump
+      Navigation:
+        z <dir>        → smart cd (zoxide)
+        zi             → interactive directory jump
 
-Files:
-  y              → file manager (yazi)
-  eza            → modern ls
+      Files:
+        y              → file manager (yazi)
+        eza            → modern ls
 
-Search:
-  rg <pattern>   → ripgrep
-  fd <name>      → fast find
-  sg <pattern>   → ast-grep (structural search)
+      Search:
+        rg <pattern>   → ripgrep
+        fd <name>      → fast find
+        sg <pattern>   → ast-grep (structural search)
 
-Git:
-  lazygit        → full git UI
-  git            → CLI (use sparingly)
-  git dft        → semantic diff (difftastic)
-  git sft        → semantic show (difftastic)
+      Git:
+        lazygit        → full git UI
+        git            → CLI (use sparingly)
+        git dft        → semantic diff (difftastic)
+        git sft        → semantic show (difftastic)
 
-System:
-  btop           → system monitor
-  dust           → disk usage
-  procs          → process viewer
+      System:
+        btop           → system monitor
+        dust           → disk usage
+        procs          → process viewer
 
-Editor:
-  hx             → Helix editor
+      Editor:
+        hx             → Helix editor
 
-Markdown:
-  glow file.md   → markdown preview
+      Markdown:
+        glow file.md   → markdown preview
 
-Images:
-  chafa <file>   → image in terminal (any terminal)
-  viu <file>     → image with pixel protocol (kitty/wezterm)
-  timg <file>    → image/video/PDF preview
+      Images:
+        chafa <file>   → image in terminal (any terminal)
+        viu <file>     → image with pixel protocol (kitty/wezterm)
+        timg <file>    → image/video/PDF preview
 
-Session:
-  zellij         → terminal multiplexer
+      Session:
+        zellij         → terminal multiplexer
 
-EOF
-      }
+      EOF
+            }
 
-      # =========================
-      # SAFE TOOL SUGGESTIONS
-      # =========================
-      # Only runs in interactive shells
-      if [[ $- == *i* ]]; then
+            # =========================
+            # SAFE TOOL SUGGESTIONS
+            # =========================
+            # Only runs in interactive shells
+            if [[ $- == *i* ]]; then
 
-        suggest_tool() {
-          local cmd="$1"
+              suggest_tool() {
+                local cmd="$1"
 
-          case "$cmd" in
-            cd)
-              echo "[hint] consider: zoxide (z <dir>)" ;;
-            du)
-              echo "[hint] consider: dust (visual disk usage)" ;;
-            ps)
-              echo "[hint] consider: procs (better process view)" ;;
-            find)
-              echo "[hint] consider: fd (faster find)" ;;
-            grep)
-              echo "[hint] consider: rg (ripgrep)" ;;
-            vim|vi|nano)
-              echo "[hint] consider: hx (Helix editor)" ;;
-            git)
-              echo "[hint] consider: lazygit (interactive git UI)" ;;
-          esac
-        }
+                case "$cmd" in
+                  cd)
+                    echo "[hint] consider: zoxide (z <dir>)" ;;
+                  du)
+                    echo "[hint] consider: dust (visual disk usage)" ;;
+                  ps)
+                    echo "[hint] consider: procs (better process view)" ;;
+                  find)
+                    echo "[hint] consider: fd (faster find)" ;;
+                  grep)
+                    echo "[hint] consider: rg (ripgrep)" ;;
+                  vim|vi|nano)
+                    echo "[hint] consider: hx (Helix editor)" ;;
+                  git)
+                    echo "[hint] consider: lazygit (interactive git UI)" ;;
+                esac
+              }
 
-        # zsh hook: only for interactive command lines
-        preexec() {
-          suggest_tool "$1"
-        }
+              # zsh hook: only for interactive command lines
+              preexec() {
+                suggest_tool "$1"
+              }
 
-      fi
+            fi
 
-      # =========================
-      # NIXOS SWITCH HELPER
-      # =========================
-      nixos-switch() {
-        local host="$1"
-        if [[ -z "$host" ]]; then
-          echo "Usage: nixos-switch <hostname>"
-          echo "Available hosts: ${hostsList}"
-          return 1
-        fi
-        nh os switch ".#''${host}" --target-host="''${host}.local" --build-host="''${host}.local"
-      }
+            # =========================
+            # NIXOS SWITCH HELPER
+            # =========================
+            nixos-switch() {
+              local host="$1"
+              if [[ -z "$host" ]]; then
+                echo "Usage: nixos-switch <hostname>"
+                echo "Available hosts: ${hostsList}"
+                return 1
+              fi
+              nh os switch ".#''${host}" --target-host="''${host}.local" --build-host="''${host}.local"
+            }
 
-      _nixos-switch() {
-        local -a hosts
-        hosts=(${hostsList})
-        _describe 'hosts' hosts
-      }
+            _nixos-switch() {
+              local -a hosts
+              hosts=(${hostsList})
+              _describe 'hosts' hosts
+            }
 
-      compdef _nixos-switch nixos-switch
+            compdef _nixos-switch nixos-switch
     '';
   };
 
@@ -455,5 +459,39 @@ EOF
     wheel-lines = 3;
   };
 
+  dconf.settings = {
+    "org/gnome/shell" = {
+      enabled-extensions = [
+        "appindicatorsupport@rgcjonas.gmail.com"
+        "dash-to-dock@micxgx.gmail.com"
+        "burn-my-windows@schneegans.github.com"
+        "clipboard-indicator@tudmotu.com"
+        "blur-my-shell@aunetx"
+        "caffeine@patapon.info"
+        "Vitals@CoreCoding.com"
+        "fullscreen-avoider@noobsai.github.com"
+        "just-perfection-desktop@just-perfection"
+      ];
+    };
+
+    "org/gnome/desktop/wm/keybindings" = {
+      switch-applications = [ "<Alt>Tab" ];
+      switch-applications-backward = [ "<Shift><Alt>Tab" ];
+      switch-windows = [ "<Super>Tab" ];
+      switch-windows-backward = [ "<Shift><Super>Tab" ];
+    };
+
+    "org/gnome/settings-daemon/plugins/media-keys" = {
+      custom-keybindings = [
+        "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
+      ];
+    };
+
+    "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0" = {
+      name = "Toggle Mic Mute";
+      command = "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle";
+      binding = "<Super>c";
+    };
+  };
 
 }

@@ -26,6 +26,7 @@ in
     ../../modules/graphical/noctalia.nix
     ../../modules/cluster/mounts.nix
     ../../modules/cluster/distributed.nix
+    ../../modules/gaming.nix
   ];
 
   scl.graphical = {

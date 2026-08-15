@@ -8,6 +8,7 @@
     	./fatman-3.pub 
     	./big-nix.pub
     	./battle-bucket.pub
+    	./hot-rod.pub
   	];
   };
 

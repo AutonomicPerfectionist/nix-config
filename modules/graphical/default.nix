@@ -21,8 +21,13 @@
     };
     security.rtkit.enable = true;
 
-    services.printing.enable = true;
-
+    services.printing = {
+      enable = true;
+      drivers = with pkgs; [
+        cups-filters
+        cups-browsed
+      ];
+    };
     xdg.portal.enable = true;
 
     programs.chromium = {

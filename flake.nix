@@ -240,6 +240,16 @@
             ./modules/comin.nix
           ];
         };
+
+        hugo-torso = mkConfiguration {
+          system = "x86_64-linux";
+          modules = [
+            ./hosts/hugo-torso/configuration.nix
+            inputs.agenix.nixosModules.default
+            inputs.comin.nixosModules.comin
+            ./modules/comin.nix
+          ];
+        };
       };
 
       allHostNames = builtins.attrNames nixosConfigurations;

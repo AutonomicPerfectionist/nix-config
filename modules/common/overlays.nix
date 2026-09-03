@@ -1,7 +1,7 @@
 # overlays.nix
 #
 # NixOS module providing GPU compute overlays for:
-#   • Intel Arc/Xe  – SYCL via nixpkgs intel-oneapi-toolkit (sycl-intel, default on)
+#   • Intel Arc/Xe  – SYCL via nixpkgs intel-oneapi-toolkit (sycl-intel, default off)
 #   • AMD           – ROCm from nixpkgs             (rocm-amd,   default off)
 #
 # Also provides the optional rgerganov/llama.cpp fork swap controlled by
@@ -49,7 +49,7 @@ let
   # stdenv and its bundled oneMKL. The generic cmake flags (single CPU backend,
   # Broadwell ISA, GGML_RPC) are layered on by modules/ml/llama.nix.
   syclOverlay = final: prev: {
-    llama-cpp-sycl = syclToolkit.stdenv.mkDerivation (finalAttrs: {
+    llama-cpp-sycl = prev.stdenv.mkDerivation (finalAttrs: {
       pname = "llama-cpp-sycl";
       version = "b0-rpc-pp-fork"; # sredman rpc-pipeline-parallelism branch
 
@@ -61,7 +61,10 @@ let
       # then fails at kernel link time ("Unresolved Symbol <__memcpy_chk>") and
       # the first matmul aborts. Disable fortify so device code uses plain
       # memcpy. (Host-side impact is negligible; the GPU does the work.)
-      hardeningDisable = [ "fortify" "fortify3" ];
+      hardeningDisable = [
+        "fortify"
+        "fortify3"
+      ];
 
       nativeBuildInputs = [
         prev.cmake
@@ -72,17 +75,44 @@ let
       ];
 
       buildInputs = [
-        syclToolkit        # DPC++ runtime + oneMKL (find_package(MKL))
-        prev.level-zero    # ze_loader for GGML_SYCL_SUPPORT_LEVEL_ZERO
+        syclToolkit # DPC++ runtime + oneMKL (find_package(MKL))
+        prev.level-zero # ze_loader for GGML_SYCL_SUPPORT_LEVEL_ZERO
         prev.ocl-icd
         prev.opencl-headers
         prev.curl
+        prev.stdenv.cc.cc.lib
+        prev.stdenv.cc
+        prev.glibc
       ];
 
       # find_package(MKL) reads MKLROOT to locate MKLConfig.cmake + libraries.
       MKLROOT = "${syclToolkit}/mkl/latest";
 
+      # icpx's cc-wrapper (see stdenv.nix) was built without a libcxx package,
+      # so its nix-support/libcxx-cxxflags is empty and -nostdlibinc leaves it
+      # with NO C++ stdlib header search path at all ("'mutex' file not
+      # found" etc). NIX_CXXSTDLIB_COMPILE is the cc-wrapper channel meant
+      # exactly for this: it's spliced in after other -isystem dirs but
+      # before the compiler's own defaults (see add-flags.sh). Note this must
+      # be NIX_CXXSTDLIB_COMPILE, not NIX_CXXFLAGS_COMPILE (not a real
+      # cc-wrapper variable — silently ignored).
+      env.NIX_CXXSTDLIB_COMPILE = toString [
+        "-isystem ${lib.getDev prev.stdenv.cc.cc}/include/c++/${prev.stdenv.cc.cc.version}"
+        "-isystem ${lib.getDev prev.stdenv.cc.cc}/include/c++/${prev.stdenv.cc.cc.version}/${prev.stdenv.hostPlatform.config}"
+
+        # SYCL's builtins.hpp defines its own isgreaterequal/isless/etc, but
+        # glibc's math.h #defines those same names as C99 macros; libstdc++'s
+        # <cmath> normally #undefs them, but nothing pulls <cmath> in before
+        # <sycl/sycl.hpp> reaches that code. Forcing it first (as if it were
+        # the TU's first line) makes the undefs run before the conflict can
+        # happen. Without this: "too few arguments provided to function-like
+        # macro invocation" / "redefinition of 'isgreaterequal'" etc.
+        "-include cmath"
+      ];
+
       cmakeFlags = [
+        "-DCMAKE_C_COMPILER=${prev.stdenv.cc}/bin/cc"
+        "-DCMAKE_CXX_COMPILER=${syclToolkit.stdenv.cc}/bin/icpx"
         (lib.cmakeBool "GGML_SYCL" true)
         "-DGGML_SYCL_TARGET=INTEL"
         (lib.cmakeBool "GGML_SYCL_F16" true)
@@ -90,18 +120,18 @@ let
         # oneDNN is not in our component set; the fork gates it on GGML_SYCL_DNN.
         (lib.cmakeBool "GGML_SYCL_DNN" false)
 
-        (lib.cmakeBool "BUILD_SHARED_LIBS"    true)
-        (lib.cmakeBool "LLAMA_BUILD_SERVER"   true)
+        (lib.cmakeBool "BUILD_SHARED_LIBS" true)
+        (lib.cmakeBool "LLAMA_BUILD_SERVER" true)
 
         # Headless, offline build: the fork's Svelte web UI provisioning
         # defaults to an npm build + HuggingFace download (impossible/slow in
         # the sandbox). The OpenAI/completion API is unaffected.
-        (lib.cmakeBool "LLAMA_BUILD_UI"        false)
+        (lib.cmakeBool "LLAMA_BUILD_UI" false)
         (lib.cmakeBool "LLAMA_USE_PREBUILT_UI" false)
 
         # Tests/examples pull jinja/minja-heavy TUs that stall the compile and
         # aren't needed for a server node.
-        (lib.cmakeBool "LLAMA_BUILD_TESTS"    false)
+        (lib.cmakeBool "LLAMA_BUILD_TESTS" false)
         (lib.cmakeBool "LLAMA_BUILD_EXAMPLES" false)
 
         # oneMKL host threading is irrelevant here (BLAS runs on the GPU);
@@ -137,22 +167,10 @@ let
   # Enables the RPC transport in the upstream nixpkgs ROCm build.
   rocmOverlay = final: prev: {
     llama-cpp-rocm = prev.llama-cpp-rocm.overrideAttrs (old: {
-      cmakeFlags = (old.cmakeFlags or []) ++ [
+      cmakeFlags = (old.cmakeFlags or [ ]) ++ [
         "-DGGML_RPC=ON"
       ];
     });
-  };
-
-  # ── Haddock overlay ──────────────────────────────────────────────────────
-  # Disabling Haddock documentation generation shaves significant build time
-  # from any Haskell packages pulled in transitively (e.g. by pandoc).
-  noHaddockOverlay = final: prev: {
-    haskellPackages = prev.haskellPackages.override {
-      overrides = hfinal: hprev: {
-        mkDerivation = args:
-          hprev.mkDerivation (args // { doHaddock = false; });
-      };
-    };
   };
 
   # ── ROCm LLVM overlay ────────────────────────────────────────────────────
@@ -169,87 +187,90 @@ let
   # Instead, set scl.overlays.rocm-llvm-arch = "ivybridge" (or similar) and
   # leave hostPlatform as plain "x86_64-linux".
   rocmLlvmOverlay =
-    if config.scl.overlays.rocm-llvm-arch == null
-    then (_: _: {})
+    if config.scl.overlays.rocm-llvm-arch == null then
+      (_: _: { })
     else
       final: prev:
-        let
-          hostArch = config.scl.overlays.rocm-llvm-arch;
+      let
+        hostArch = config.scl.overlays.rocm-llvm-arch;
 
-          marchFlag = "-march=${hostArch}";
+        marchFlag = "-march=${hostArch}";
 
-          # Suppress all post-AVX extensions that ivybridge (and similar) lack.
-          # Since hostPlatform is left as plain x86_64-linux, gcc.isa will be
-          # empty — so these flags are always appended when an arch is set,
-          # which is the safe/correct behaviour for pre-AVX2 hosts.
-          noExtensionFlags = [
-            "-mno-avx2"
-            "-mno-bmi2"
-            "-mno-bmi"
-            "-mno-movbe"
-            "-mno-fma"
-            "-mno-lzcnt"
-            "-mno-rdrnd"
-            "-mno-f16c"
-          ];
+        # Suppress all post-AVX extensions that ivybridge (and similar) lack.
+        # Since hostPlatform is left as plain x86_64-linux, gcc.isa will be
+        # empty — so these flags are always appended when an arch is set,
+        # which is the safe/correct behaviour for pre-AVX2 hosts.
+        noExtensionFlags = [
+          "-mno-avx2"
+          "-mno-bmi2"
+          "-mno-bmi"
+          "-mno-movbe"
+          "-mno-fma"
+          "-mno-lzcnt"
+          "-mno-rdrnd"
+          "-mno-f16c"
+        ];
 
-          hostCFlags = lib.concatStringsSep " " ([ marchFlag ] ++ noExtensionFlags);
+        hostCFlags = lib.concatStringsSep " " ([ marchFlag ] ++ noExtensionFlags);
 
-          # Strip hard-coded march/mtune flags from a derivation's
-          # NIX_CFLAGS_COMPILE and replace them with the host-appropriate ones.
-          patchCFlags = pkg: pkg.overrideAttrs (old: {
-            env = (old.env or {}) // {
+        # Strip hard-coded march/mtune flags from a derivation's
+        # NIX_CFLAGS_COMPILE and replace them with the host-appropriate ones.
+        patchCFlags =
+          pkg:
+          pkg.overrideAttrs (old: {
+            env = (old.env or { }) // {
               NIX_CFLAGS_COMPILE = lib.pipe (old.env.NIX_CFLAGS_COMPILE or "") [
                 (lib.splitString " ")
-                (builtins.filter (f:
-                  f != "-march=skylake" &&
-                  f != "-mtune=znver3"  &&
-                  f != ""
-                ))
+                (builtins.filter (f: f != "-march=skylake" && f != "-mtune=znver3" && f != ""))
                 (flags: flags ++ [ hostCFlags ])
                 (lib.concatStringsSep " ")
               ];
             };
           });
 
-          # Patch the libstdcxxClang wrapper so the host flags propagate into
-          # all downstream compilations that use this compiler.
-          llvmPackages_22_patched = prev.llvmPackages_22 // {
-            override = args:
-              let
-                base = prev.llvmPackages_22.override args;
-                patchedLibstdcxxClang = base.libstdcxxClang.overrideAttrs (old: {
-                  postFixup = (old.postFixup or "") + ''
-                    echo "${hostCFlags}" >> $out/nix-support/cc-cflags
-                  '';
-                });
-              in
-              base // {
-                inherit (base) override overrideScope;
-                libstdcxxClang = patchedLibstdcxxClang;
-              };
-          };
-        in
-        {
-          rocmPackages = prev.rocmPackages.overrideScope (scopeFinal: scopePrev: {
+        # Patch the libstdcxxClang wrapper so the host flags propagate into
+        # all downstream compilations that use this compiler.
+        llvmPackages_22_patched = prev.llvmPackages_22 // {
+          override =
+            args:
+            let
+              base = prev.llvmPackages_22.override args;
+              patchedLibstdcxxClang = base.libstdcxxClang.overrideAttrs (old: {
+                postFixup = (old.postFixup or "") + ''
+                  echo "${hostCFlags}" >> $out/nix-support/cc-cflags
+                '';
+              });
+            in
+            base
+            // {
+              inherit (base) override overrideScope;
+              libstdcxxClang = patchedLibstdcxxClang;
+            };
+        };
+      in
+      {
+        rocmPackages = prev.rocmPackages.overrideScope (
+          scopeFinal: scopePrev: {
             llvm = lib.recurseIntoAttrs (
               let
-                base = lib.callPackageWith
-                  (final // {
+                base = lib.callPackageWith (
+                  final
+                  // {
                     inherit (scopePrev) rocm-device-libs;
                     llvmPackages_22 = llvmPackages_22_patched;
-                  })
-                  (prev.path + "/pkgs/development/rocm-modules/llvm/default.nix")
-                  {};
+                  }
+                ) (prev.path + "/pkgs/development/rocm-modules/llvm/default.nix") { };
               in
-              base // {
-                llvm              = patchCFlags base.llvm;
-                lld               = patchCFlags base.lld;
-                clang-unwrapped   = patchCFlags base.clang-unwrapped;
+              base
+              // {
+                llvm = patchCFlags base.llvm;
+                lld = patchCFlags base.lld;
+                clang-unwrapped = patchCFlags base.clang-unwrapped;
               }
             );
-          });
-        };
+          }
+        );
+      };
 
   # ── Custom source overlay ─────────────────────────────────────────────────
   # When services.llama.useCustomSource is true, replace every llama-cpp
@@ -263,48 +284,49 @@ let
   #
   # The fix: declare the fork in flake.nix (see comment at the top of this
   # file) and reference flake-inputs.llama-cpp-fork as the src below.
-  customSourceOverlay = final: prev:
-  let
-    forkSrc = flake-inputs.llama-cpp-fork;
+  customSourceOverlay =
+    final: prev:
+    let
+      forkSrc = flake-inputs.llama-cpp-fork;
 
-    overrideFork = pkg: pkg.overrideAttrs (_: {
-      src = forkSrc;
+      overrideFork =
+        pkg:
+        pkg.overrideAttrs (_: {
+          src = forkSrc;
 
-      npmDepsHash =
-        "sha256-pjdbI6NcZRlJVd62xhgbLhWrwFYwgsIwjORqvo1+VD8=";
-    });
+          npmDepsHash = "sha256-pjdbI6NcZRlJVd62xhgbLhWrwFYwgsIwjORqvo1+VD8=";
+        });
 
-  in
-  lib.optionalAttrs config.services.llama.useCustomSource {
+    in
+    lib.optionalAttrs config.services.llama.useCustomSource {
 
-    llama-cpp =
-      overrideFork prev.llama-cpp;
+      llama-cpp = overrideFork prev.llama-cpp;
 
-    llama-cpp-rocm =
-      overrideFork prev.llama-cpp-rocm;
+      llama-cpp-rocm = overrideFork prev.llama-cpp-rocm;
 
-    llama-cpp-vulkan =
-      overrideFork prev.llama-cpp-vulkan;
+      llama-cpp-vulkan = overrideFork prev.llama-cpp-vulkan;
 
-    # NOTE: llama-cpp-sycl is defined by syclOverlay directly from the fork
-    # source (nixpkgs has no SYCL llama-cpp to override), so it is intentionally
-    # absent here.
-  };
+      # NOTE: llama-cpp-sycl is defined by syclOverlay directly from the fork
+      # source (nixpkgs has no SYCL llama-cpp to override), so it is intentionally
+      # absent here.
+    };
 
- # ── ROCm GPU targets overlay ───────────────────────────────────────────────
+  # ── ROCm GPU targets overlay ───────────────────────────────────────────────
   # Restricts rocmPackages.clr to only build for the specified GPU
   # architectures.  Changes to rocmPackages propagate to pkgsRocm (the
   # nixpkgs set with rocmSupport=true), so pkgsRocm.llama-cpp picks up
   # the restricted target set automatically.
-  rocmGpuTargetsOverlay =
-    lib.optionalAttrs (config.scl.overlays.rocm-gpu-targets != [])
-      (final: prev: {
-        rocmPackages = prev.rocmPackages.overrideScope (scopeFinal: scopePrev: {
+  rocmGpuTargetsOverlay = lib.optionalAttrs (config.scl.overlays.rocm-gpu-targets != [ ]) (
+    final: prev: {
+      rocmPackages = prev.rocmPackages.overrideScope (
+        scopeFinal: scopePrev: {
           clr = scopePrev.clr.override {
             localGpuTargets = config.scl.overlays.rocm-gpu-targets;
           };
-        });
-      });
+        }
+      );
+    }
+  );
 
 in
 {
@@ -312,18 +334,21 @@ in
 
   options.scl.overlays = {
     sycl-intel = lib.mkEnableOption "SYCL + Intel GPU overlay stack";
-    rocm-amd   = lib.mkEnableOption "ROCm  + AMD  GPU overlay stack" // { default = false; };
+    rocm-amd = lib.mkEnableOption "ROCm  + AMD  GPU overlay stack" // {
+      default = false;
+    };
     rocm-gpu-targets = lib.mkOption {
-      type        = lib.types.listOf lib.types.str;
-      default     = [ "gfx906" ];
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
       description = ''
         ROCm GPU target architectures to build into pkgsRocm.
         gfx1030 = RX 6xxx / W6800, gfx906 = MI50 / MI60 / MI210 / MI250.
+        Leave empty to avoid rebuilding rocmPackages.clr when ROCm is not used.
       '';
     };
     rocm-llvm-arch = lib.mkOption {
-      type        = lib.types.nullOr lib.types.str;
-      default     = null;
+      type = lib.types.nullOr lib.types.str;
+      default = null;
       description = ''
         When set, overrides the march used when building ROCm's LLVM,
         replacing the upstream hardcoded skylake/znver3 flags.  Set this
@@ -347,22 +372,23 @@ in
     # AMD ROCm stack (llama-cpp-rocm with RPC + patched LLVM).
     # rocmLlvmOverlay is a no-op when rocm-llvm-arch is null, so it is safe
     # to include unconditionally; the guard lives inside the overlay itself.
-    (lib.optionals config.scl.overlays.rocm-amd  [ rocmOverlay rocmLlvmOverlay ])
+    (lib.optionals config.scl.overlays.rocm-amd [
+      rocmOverlay
+      rocmLlvmOverlay
+    ])
 
     # ROCm GPU target architectures (restricts clr + downstream pkgsRocm).
-    (lib.optionals (config.scl.overlays.rocm-gpu-targets != []) [ rocmGpuTargetsOverlay ])
+    (lib.optionals (config.scl.overlays.rocm-gpu-targets != [ ]) [ rocmGpuTargetsOverlay ])
 
-    # Global overlays applied regardless of GPU selection.
-    [ noHaddockOverlay ]
-
-    # llm-agents nixpkgs overlay from its own flake input.
+    # llm-agents nixpkgs overlay from its own flake input (always-on per user request).
     [ flake-inputs.llm-agents.overlays.shared-nixpkgs ]
 
     # Source swap: replaces every llama-cpp variant with the rgerganov fork
     # when services.llama.useCustomSource = true.
-    [ customSourceOverlay ]
+    (lib.optionals (config.services.llama.useCustomSource or false) [ customSourceOverlay ])
 
-    [ flake-inputs.niri.overlays.niri ]
+    (lib.optionals (
+      (config.scl.graphical.niri.enable or false) || (config.userconfig.branden.graphical or false)
+    ) [ flake-inputs.niri.overlays.niri ])
   ];
 }
-

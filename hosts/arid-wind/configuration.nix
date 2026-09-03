@@ -37,6 +37,7 @@
   hardware.graphics.enable = true;
   hardware.gpu.amd.enable = true;
   enableRocmSupport = true;
+  scl.overlays.rocm-amd = true;
   scl.overlays.rocm-gpu-targets = [
     "gfx1030"
   ];

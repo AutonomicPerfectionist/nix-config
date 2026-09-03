@@ -32,6 +32,7 @@
   enableRocmSupport = true;
 
   scl.overlays.rocm-amd = true;
+  scl.overlays.rocm-gpu-targets = [ "gfx906" ];
   services.llama.useCustomSource = false;
   services.llama.rpcServer.enable = true;
   services.llama.preferVulkan = true;

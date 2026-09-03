@@ -17,6 +17,4 @@
   };
 
   networking.hostName = "king-blue";
-
-  scl.overlays.sycl-intel = false;
 }

@@ -17,6 +17,4 @@
   };
 
   networking.hostName = "queen-blue";
-
-  scl.overlays.sycl-intel = true;
 }

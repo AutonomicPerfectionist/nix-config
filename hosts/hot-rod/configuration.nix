@@ -21,11 +21,11 @@ in
     ../../modules/flatpak.nix
     ../../modules/nix-ld.nix
     ../../modules/ml/llama.nix
+    ../../modules/ml/tools.nix
     ../../modules/graphical
     ../../modules/graphical/niri.nix
     ../../modules/graphical/noctalia.nix
-    ../../modules/cluster/mounts.nix
-    ../../modules/cluster/distributed.nix
+    ../../modules/cluster
     ../../modules/gaming.nix
   ];
 

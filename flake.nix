@@ -47,7 +47,7 @@
       url = "github:noctalia-dev/noctalia/legacy-v4";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    niri.url = "github:sodiboo/niri-flake";
+    niri.url = "github:epireyn/niri-flake";
 
     nix-amd-ai.url = "github:noamsto/nix-amd-ai";
   };

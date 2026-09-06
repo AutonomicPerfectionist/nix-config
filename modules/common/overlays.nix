@@ -22,6 +22,9 @@
   lib,
   pkgs,
   flake-inputs,
+  # Standalone home-manager passes this specialArg (see mkHomeConfig in flake.nix);
+  # NixOS hosts do not, hence the default.
+  userConfiguration ? null,
   ...
 }:
 let
@@ -387,8 +390,14 @@ in
     # when services.llama.useCustomSource = true.
     (lib.optionals (config.services.llama.useCustomSource or false) [ customSourceOverlay ])
 
+    # niri overlay: needed wherever niri is actually installed. The first two
+    # checks cover NixOS hosts; the third covers standalone home-manager,
+    # where neither NixOS option exists but users/branden/home/niri.nix still
+    # references pkgs.niri-unstable from this overlay.
     (lib.optionals (
-      (config.scl.graphical.niri.enable or false) || (config.userconfig.branden.graphical or false)
+      (config.scl.graphical.niri.enable or false)
+      || (config.userconfig.branden.graphical or false)
+      || (userConfiguration != null && (userConfiguration.graphical or false))
     ) [ flake-inputs.niri.overlays.niri ])
   ];
 }

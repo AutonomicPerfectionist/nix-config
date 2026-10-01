@@ -39,7 +39,6 @@ in
 
           # Optional (compute / tooling):
           intel-compute-runtime # OpenCL (NEO) + Level Zero for Arc/Xe
-          intel-compute-runtime.drivers
           level-zero
           intel-graphics-compiler
 
@@ -110,7 +109,6 @@ in
 
       environment.systemPackages = with pkgs; [
         intel-compute-runtime # OpenCL (NEO) + Level Zero for Arc/Xe
-        intel-compute-runtime.drivers
         level-zero
         intel-graphics-compiler
         clinfo

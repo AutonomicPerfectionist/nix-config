@@ -33,5 +33,7 @@
     programs.chromium = {
       enable = true;
     };
+
+    environment.systemPackages = [ pkgs.cosmic-edit ];
   };
 }

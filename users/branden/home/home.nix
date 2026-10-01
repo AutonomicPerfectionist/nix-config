@@ -24,8 +24,11 @@ in
       ./vscode.nix
     ]
     ++ [
+      # NOTE: GPU/niri nixpkgs overlays are NOT imported here. On NixOS,
+      # home-manager uses useGlobalPkgs and inherits the system overlays
+      # from modules/common/overlays.nix. Standalone machines get
+      # modules/common/overlays-hm.nix via mkHomeConfig in flake.nix.
       ../../../modules/ml/llama-hm.nix
-      ../../../modules/common/overlays.nix
     ];
   services.llama.useCustomSource = true;
 

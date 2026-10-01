@@ -273,35 +273,39 @@
           inherit pkgs;
 
           extraSpecialArgs = {
-            flake-inputs = inputs // { inherit system; };
+            flake-inputs = inputs // {
+              inherit system;
+            };
             pkgs-stable = import inputs.nixpkgs-stable {
               inherit system;
               config.allowUnfree = true;
             };
             userConfiguration = {
-              enable    = true;
+              enable = true;
               graphical = graphical;
             };
           };
 
-          modules =
-            [ ./users/branden/home/home.nix ]
-            ++ pkgs.lib.optionals graphical [
-              inputs.niri.homeModules.niri
-              inputs.noctalia.homeModules.default
-            ]
-            ++ [
-              {
-                targets.genericLinux.enable = true;
-                nixpkgs.config.allowUnfree = true;
-                nixpkgs.config.nvidia.acceptLicense = true;
-                services.llama.backend = llamaBackend;
-                services.llama.enableHomePackage = true;
-              }
-            ]
-            ++ pkgs.lib.optionals (nvidia != null) [
-              { targets.genericLinux.gpu.nvidia = nvidia; }
-            ];
+          modules = [
+            ./users/branden/home/home.nix
+            ./modules/common/overlays-hm.nix
+          ]
+          ++ pkgs.lib.optionals graphical [
+            inputs.niri.homeModules.niri
+            inputs.noctalia.homeModules.default
+          ]
+          ++ [
+            {
+              targets.genericLinux.enable = true;
+              nixpkgs.config.allowUnfree = true;
+              nixpkgs.config.nvidia.acceptLicense = true;
+              services.llama.backend = llamaBackend;
+              services.llama.enableHomePackage = true;
+            }
+          ]
+          ++ pkgs.lib.optionals (nvidia != null) [
+            { targets.genericLinux.gpu.nvidia = nvidia; }
+          ];
         };
 
     in
@@ -316,12 +320,12 @@
       # Run:  home-manager switch -b backup --flake ~/.nix#"branden@<hostname>"
       homeConfigurations = {
         "branden@ryzen-desktop" = mkHomeConfig {
-          graphical    = true;
+          graphical = true;
           llamaBackend = "cuda";
           nvidia = {
-            enable  = true;
+            enable = true;
             version = "595.71.05";
-            sha256  = "sha256-NiA7iWC35JyKQva6H1hjzeNKBek9KyS3mK8G3YRva4I=";
+            sha256 = "sha256-NiA7iWC35JyKQva6H1hjzeNKBek9KyS3mK8G3YRva4I=";
           };
         };
 

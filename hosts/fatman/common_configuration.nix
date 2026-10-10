@@ -13,6 +13,7 @@
     ../../modules/cluster/management.nix
     ../../modules/cluster/distributed.nix
     ../../modules/cluster/rdma.nix
+    ../../modules/cluster/smfc.nix
     ../../hardware/gpus/gpus.nix
 
     ../../users/remotebuild

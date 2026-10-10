@@ -31,6 +31,10 @@
   hardware.gpu.amd.enable = true;
   enableRocmSupport = true;
 
+  cluster.smfc.enable = true;
+  cluster.smfc.gpuType = "amd";
+  cluster.smfc.settings.Ipmi.platform_name = "generic_x9";
+
   scl.overlays.rocm-amd = true;
   scl.overlays.rocm-gpu-targets = [ "gfx906" ];
   services.llama.useCustomSource = false;

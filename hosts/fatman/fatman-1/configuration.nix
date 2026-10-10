@@ -22,6 +22,10 @@
   hardware.gpu.nvidia.enable = true;
   hardware.gpu.nvidia.cards = [ "tesla_v100" ];
 
+  cluster.smfc.enable = true;
+  cluster.smfc.gpuType = "nvidia";
+  cluster.smfc.settings.Ipmi.platform_name = "generic_x9";
+
   services.llama.useCustomSource = true;
   services.llama.rpcServer.enable = true;
   hardware.infiniband.guids = [

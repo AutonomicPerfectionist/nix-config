@@ -22,6 +22,7 @@ in
       ./kitty.nix
       ./slack.nix
       ./vscode.nix
+      ./vlc.nix
     ]
     ++ [
       # NOTE: GPU/niri nixpkgs overlays are NOT imported here. On NixOS,

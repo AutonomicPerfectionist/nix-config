@@ -14,6 +14,13 @@
     services.displayManager.sessionPackages = [ pkgs.niri-unstable ];
     systemd.packages = [ pkgs.niri-unstable ];
 
+    services.pipewire = {
+      enable = true;
+      pulse.enable = true;
+      wireplumber.enable = true;
+    };
+    security.rtkit.enable = true;
+
     environment.sessionVariables.NIXOS_OZONE_WL = "1";
 
     xdg.portal.extraPortals = with pkgs; [

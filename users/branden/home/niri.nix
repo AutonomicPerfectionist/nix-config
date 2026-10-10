@@ -13,13 +13,12 @@
           xkb = {
             layout = "us";
             variant = "";
-            options = "ctrl:nocaps";
           };
         };
         touchpad = {
           tap = true;
           "click-method" = "clickfinger";
-          "natural-scroll" = true;
+          "natural-scroll" = false;
         };
       };
 
@@ -327,7 +326,7 @@
           ];
         };
         "Mod+Return" = {
-          action.spawn = [ "ghostty" ];
+          action.spawn = [ "kitty" ];
         };
 
         "Mod+Tab" = {

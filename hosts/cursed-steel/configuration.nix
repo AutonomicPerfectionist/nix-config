@@ -36,6 +36,7 @@ in
     ../../modules/flatpak.nix
     ../../modules/nix-ld.nix
     ../../modules/ml/llama.nix
+    ../../modules/graphical/default.nix
     ../../modules/graphical
     ../../modules/graphical/niri.nix
     ../../modules/graphical/noctalia.nix

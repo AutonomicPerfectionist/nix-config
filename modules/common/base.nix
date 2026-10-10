@@ -46,11 +46,6 @@
     LC_TIME = "en_US.UTF-8";
   };
 
-  services.xserver.xkb = {
-    layout = "us";
-    variant = "";
-  };
-
   nixpkgs.config.allowUnfree = true;
 
   services.openssh.enable = true;

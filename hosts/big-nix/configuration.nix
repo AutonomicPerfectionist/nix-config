@@ -9,10 +9,8 @@
   imports = [
     ./hardware-configuration.nix
     ../../modules/compute.nix
-    ../../modules/cluster/mounts.nix
-    ../../modules/cluster/management.nix
-    ../../modules/cluster/rdma.nix
-    ../../modules/cluster/distributed.nix
+    ../../modules/cluster
+    ../../modules/cluster/atticd.nix
     ../../hardware/gpus/gpus.nix
     ../../modules/ml/llama.nix
     ../../modules/ml/hermes.nix
@@ -34,8 +32,10 @@
   ];
 
   boot.kernelPackages = zfs.selectZfsCompatibleKernel { };
-  boot.zfs.extraPools = [ "archive" ];
+  boot.zfs.extraPools = [ "archive" "cache" ];
 
+  # age.secrets.attic-env.file = ../secrets/attic-env.age;
+  # services.atticd.environmentFile = config.age.secrets.attic-env.path;
   hardware.graphics.enable = true;
   hardware.gpu.intel.enable = true;
   cluster.rdma.enable = true;

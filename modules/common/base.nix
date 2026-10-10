@@ -8,6 +8,7 @@
 {
   imports = [
     flake-inputs.home-manager.nixosModules.default
+    flake-inputs.agenix.nixosModules.default
     ./overlays.nix
     ../nix-settings.nix
     ../avahi.nix
@@ -24,6 +25,10 @@
 
   networking.networkmanager.enable = true;
   networking.firewall.enable = false;
+  services.resolved = {
+    enable = true;
+    settings.Resolve.MulticastDNS = "resolve";
+  };
 
   time.timeZone = "America/Chicago";
 

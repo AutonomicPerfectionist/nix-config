@@ -5,10 +5,14 @@
     useDefaultShell = true;
 
     openssh.authorizedKeys.keyFiles = [
+      ./fatman-1.pub
+      ./fatman-2.pub
     	./fatman-3.pub 
     	./big-nix.pub
+    	./cursed-steel.pub
     	./battle-bucket.pub
     	./hot-rod.pub
+    	./thunder-budget-3.local
   	];
   };
 

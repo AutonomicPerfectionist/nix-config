@@ -1,0 +1,83 @@
+Adds a `nvidia_temp_sensor` [GPU] option (0=gpu die [default, matches upstream], 1=memory),
+mirroring the existing AMD `amd_temp_sensor` selector. Upstream smfc 6.4.2 hardcodes the nvidia
+path to `--query-gpu=temperature.gpu`; some datacenter cards/driver branches (e.g. Tesla V100 on
+driver 580.x) also report `temperature.memory`, which this lets smfc poll instead for the [GPU]
+fan controller.
+--- a/src/smfc/config.py	2026-10-10 15:21:10.150889055 -0500
++++ b/src/smfc/config.py	2026-10-10 15:21:42.002072014 -0500
+@@ -115,6 +115,7 @@
+     nvidia_smi_path: str        # Path for 'nvidia-smi' command
+     rocm_smi_path: str          # Path for 'rocm-smi' command
+     amd_temp_sensor: int        # AMD temperature sensor (0-junction, 1-edge, 2-memory)
++    nvidia_temp_sensor: int     # NVIDIA temperature sensor (0-gpu, 1-memory)
+     control_function: List[Tuple[int, int]] = field(default_factory=list)  # (T,L) breakpoints, empty = legacy
+ 
+ 
+@@ -235,6 +236,7 @@
+     CV_GPU_NVIDIA_SMI_PATH: str = "nvidia_smi_path" # Path to nvidia-smi command
+     CV_GPU_ROCM_SMI_PATH: str = "rocm_smi_path"     # Path to rocm-smi command
+     CV_GPU_AMD_TEMP_SENSOR: str = "amd_temp_sensor" # AMD temperature sensor index
++    CV_GPU_NVIDIA_TEMP_SENSOR: str = "nvidia_temp_sensor"  # NVIDIA temperature sensor index
+ 
+     # [NPU] section variable names
+     CV_NPU_IDS: str = "npu_device_ids"              # NPU card IDs (npu-smi -i arguments)
+@@ -253,6 +255,12 @@
+     CV_AMD_TEMP_MEMORY: str = "Temperature (Sensor memory) (C)"
+     CV_AMD_TEMP_KEYS: tuple = (CV_AMD_TEMP_JUNCTION, CV_AMD_TEMP_EDGE, CV_AMD_TEMP_MEMORY)
+ 
++    # NVIDIA temperature sensor names (nvidia-smi --query-gpu field names). Memory temperature is only
++    # reported by nvidia-smi/NVML on some GPU generations and driver branches (N/A otherwise).
++    CV_NVIDIA_TEMP_GPU: str = "temperature.gpu"
++    CV_NVIDIA_TEMP_MEMORY: str = "temperature.memory"
++    CV_NVIDIA_TEMP_KEYS: tuple = (CV_NVIDIA_TEMP_GPU, CV_NVIDIA_TEMP_MEMORY)
++
+     # [CONST] section variable names
+     CV_CONST_LEVEL: str = "level"   # Constant fan level
+ 
+@@ -339,6 +347,7 @@
+     DV_GPU_NVIDIA_SMI_PATH: str = "/usr/bin/nvidia-smi"
+     DV_GPU_ROCM_SMI_PATH: str = "/usr/bin/rocm-smi"
+     DV_GPU_AMD_TEMP_SENSOR: int = 0
++    DV_GPU_NVIDIA_TEMP_SENSOR: int = 0
+ 
+     # Default values — [NPU] section
+     DV_NPU_STEPS: int = 5
+@@ -775,6 +784,10 @@
+             amd_temp_sensor = parser[s].getint(self.CV_GPU_AMD_TEMP_SENSOR, fallback=self.DV_GPU_AMD_TEMP_SENSOR)
+             if gpu_type == "amd" and amd_temp_sensor not in range(0, 3):
+                 raise ValueError(f"[{s}] invalid value: {self.CV_GPU_AMD_TEMP_SENSOR}={amd_temp_sensor}.")
++            nvidia_temp_sensor = parser[s].getint(self.CV_GPU_NVIDIA_TEMP_SENSOR,
++                                                   fallback=self.DV_GPU_NVIDIA_TEMP_SENSOR)
++            if gpu_type == "nvidia" and nvidia_temp_sensor not in range(0, 2):
++                raise ValueError(f"[{s}] invalid value: {self.CV_GPU_NVIDIA_TEMP_SENSOR}={nvidia_temp_sensor}.")
+             gpu_device_ids = self.parse_gpu_ids(parser[s].get(self.CV_GPU_IDS, self.DV_GPU_DEVICE_IDS))
+             nvidia_smi_path = parser[s].get(self.CV_GPU_NVIDIA_SMI_PATH, self.DV_GPU_NVIDIA_SMI_PATH)
+             if enabled and gpu_type == "nvidia" and not nvidia_smi_path.strip():
+@@ -802,6 +815,7 @@
+                 nvidia_smi_path=nvidia_smi_path,
+                 rocm_smi_path=rocm_smi_path,
+                 amd_temp_sensor=amd_temp_sensor,
++                nvidia_temp_sensor=nvidia_temp_sensor,
+                 control_function=self._read_control_function(parser, s, steps),
+             )
+             self._validate_fan_controller_config(cfg, s)
+--- a/src/smfc/gpufc.py	2026-10-10 15:21:10.157399316 -0500
++++ b/src/smfc/gpufc.py	2026-10-10 15:21:50.760879603 -0500
+@@ -45,6 +45,7 @@
+             self.log.msg(Log.LOG_CONFIG, f"   gpu_device_ids = {self.config.gpu_device_ids}")
+             if self.config.gpu_type == "nvidia":
+                 self.log.msg(Log.LOG_CONFIG, f"   nvidia_smi_path = {self.config.nvidia_smi_path}")
++                self.log.msg(Log.LOG_CONFIG, f"   nvidia_temp_sensor = {self.config.nvidia_temp_sensor}")
+             else:
+                 self.log.msg(Log.LOG_CONFIG, f"   rocm_smi_path = {self.config.rocm_smi_path}")
+                 self.log.msg(Log.LOG_CONFIG, f"   amd_temp_sensor = {self.config.amd_temp_sensor}")
+@@ -85,7 +86,8 @@
+             r: subprocess.CompletedProcess  # result of the executed process
+ 
+             if self.config.gpu_type == "nvidia":
+-                nvidia_args = ["--query-gpu=temperature.gpu", "--format=csv,noheader,nounits"]
++                temp_field = Config.CV_NVIDIA_TEMP_KEYS[self.config.nvidia_temp_sensor]
++                nvidia_args = [f"--query-gpu={temp_field}", "--format=csv,noheader,nounits"]
+                 r = self._exec_smi(self.config.nvidia_smi_path, nvidia_args)
+                 self.smi_called = current_time
+                 temp_list = r.stdout.splitlines()

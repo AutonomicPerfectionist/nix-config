@@ -95,6 +95,10 @@ let
         GPU = gpuBaseSettings // {
           gpu_type = "nvidia";
           nvidia_smi_path = nvidiaSmiPath;
+          # 0 = GPU die temperature (upstream default). Some datacenter cards/driver branches also
+          # expose memory temperature (nvidia-smi --query-gpu=temperature.memory); override to 1
+          # per host via `settings.GPU.nvidia_temp_sensor` where that's confirmed to work.
+          nvidia_temp_sensor = 0;
         };
       }
     else if cfg.gpuType == "amd" then
@@ -147,6 +151,13 @@ in
         IMPORTANT: platform_name defaults to "auto". On Supermicro X9
         boards, set `settings.Ipmi.platform_name = "generic_x9";` explicitly
         rather than relying on BMC autodetection.
+
+        NOTE: `settings.GPU.nvidia_temp_sensor` (0=gpu die, 1=memory) is a
+        local addition (../../pkgs/smfc/nvidia-memory-temp.patch), not part
+        of upstream smfc. Memory temperature reporting is hit-or-miss across
+        nvidia GPU generations/driver branches -- verify with
+        `nvidia-smi --query-gpu=temperature.memory --format=csv` on the
+        target host before relying on it.
       '';
     };
   };

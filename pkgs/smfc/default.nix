@@ -17,6 +17,10 @@ python3Packages.buildPythonApplication rec {
     hash = "sha256-2YRQnHiG+4vWKJ3CZ+jyra5A6i+wAz2x+1ET1gas41o=";
   };
 
+  # Adds nvidia_temp_sensor= to [GPU] (0=gpu die, 1=memory), since upstream only polls
+  # temperature.gpu for nvidia. See the patch file for details.
+  patches = [ ./nvidia-memory-temp.patch ];
+
   build-system = [ python3Packages.setuptools ];
 
   dependencies = [ python3Packages.pyudev ];

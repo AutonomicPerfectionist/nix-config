@@ -9,6 +9,8 @@
     ./hardware-configuration.nix
     ./disk-config.nix
     ../common_configuration.nix
+    ../../../modules/cluster/push.nix
+    ../../../modules/distributed-builds.nix
   ];
 
   userconfig.branden = {

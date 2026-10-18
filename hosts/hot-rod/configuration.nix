@@ -46,6 +46,7 @@ in
   hardware.gpu.nvidia.cards = [
     "rtx_3090"
   ];
+  hardware.nvidia-container-toolkit.enable = true;
 
   boot.loader.systemd-boot.configurationLimit = 8;
 
@@ -97,12 +98,6 @@ in
     X11Forwarding = true;
   };
   virtualisation.docker.enable = true;
-  fileSystems."/nix" = {
-     device = "/dev/disk/by-uuid/ad2dc486-7ca9-4e67-958a-02652be5cdf6";
-     fsType = "ext4";
-     neededForBoot = true;
-     options = [ "noatime" ];
-   };
 
-  system.stateVersion = "23.11";
+  system.stateVersion = "26.11";
 }

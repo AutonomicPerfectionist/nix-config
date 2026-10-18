@@ -4,16 +4,13 @@
     group = "remotebuild";
     useDefaultShell = true;
 
+    # Single shared key for every dispatcher host; the matching private key
+    # is distributed via the remotebuild-key agenix secret (see
+    # modules/distributed-builds.nix), so adding a new dispatcher never
+    # requires generating or copying in a new keypair.
     openssh.authorizedKeys.keyFiles = [
-      ./fatman-1.pub
-      ./fatman-2.pub
-    	./fatman-3.pub 
-    	./big-nix.pub
-    	./cursed-steel.pub
-    	./battle-bucket.pub
-    	./hot-rod.pub
-    	./thunder-budget-3.local
-  	];
+      ./remotebuild.pub
+    ];
   };
 
   users.groups.remotebuild = {};

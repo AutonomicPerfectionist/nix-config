@@ -36,12 +36,12 @@ in
     ../../modules/flatpak.nix
     ../../modules/nix-ld.nix
     ../../modules/ml/llama.nix
-    ../../modules/graphical/default.nix
     ../../modules/graphical
     ../../modules/graphical/niri.nix
     ../../modules/graphical/noctalia.nix
     ../../modules/cluster/mounts.nix
     ../../modules/cluster/distributed.nix
+    ../../modules/cluster/push.nix
   ];
 
   scl.graphical = {
@@ -68,6 +68,7 @@ in
     nvidiaBusId = "PCI:1:0:0";
   };
   hardware.nvidia.modesetting.enable = true;
+  hardware.nvidia-container-toolkit.enable = true;
 
   boot.extraModulePackages = [ amdxdna-module ];
   boot.kernelModules = [ "amdxdna" ];

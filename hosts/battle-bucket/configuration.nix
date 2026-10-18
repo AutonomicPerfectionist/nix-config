@@ -28,6 +28,7 @@ in
     ../../modules/graphical/noctalia.nix
     ../../modules/cluster/mounts.nix
     ../../modules/cluster/distributed.nix
+    ../../modules/cluster/push.nix
   ];
 
   scl.graphical = {

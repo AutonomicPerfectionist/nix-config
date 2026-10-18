@@ -12,6 +12,8 @@
     ../../modules/cluster/mounts.nix
     ../../modules/cluster/management.nix
     ../../modules/cluster/distributed.nix
+    ../../modules/cluster/push.nix
+    ../../modules/distributed-builds.nix
     ../../hardware/gpus/gpus.nix
     ./disk-config.nix
   ];

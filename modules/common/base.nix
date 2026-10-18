@@ -14,9 +14,20 @@
     ../avahi.nix
     ../../users/branden
     ../monitoring
+    ../cluster/attic.nix
   ];
 
   scl.monitoring.enable = true;
+
+  # Every host pulls from the shared cache by default; pushing to it is a
+  # separate opt-in (see modules/cluster/push.nix and modules/cluster/default.nix)
+  # since it requires the attic-push-token secret, which not every host has.
+  cluster.atticClient = {
+    enable = true;
+    endpoint = "http://big-nix.local:8080";
+    cache = "main";
+    publicKey = "main:68CBhPmqKQZsyCiOOhn247PkST3KwiFNNCREFb8REho=";
+  };
 
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
@@ -54,5 +65,6 @@
     extraSpecialArgs = { inherit flake-inputs; };
     useGlobalPkgs = true;
     useUserPackages = true;
+    backupFileExtension = "hm-bak";
   };
 }

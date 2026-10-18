@@ -31,8 +31,38 @@
     "/share/xdg-desktop-portal"
   ];
 
+  boot.supportedFilesystems = [ "nfs" ];
+  services.rpcbind.enable = true; # needed for NFS
+
+  services.nfs.server.enable = true;
+  services.nfs.server.exports = ''
+    /export/archive    *(sec=sys,rw,no_subtree_check,crossmnt)
+  '';
   boot.kernelPackages = zfs.selectZfsCompatibleKernel { };
-  boot.zfs.extraPools = [ "archive" "cache" ];
+  boot.zfs.extraPools = [
+    "archive"
+    "cache"
+  ];
+
+  fileSystems."/export/archive" = {
+    device = "/archive";
+    fsType = "none";
+    # rbind (not bind): archive/movies, archive/photos, etc. are each their
+    # own zfs mount nested under /archive, and a plain bind mount does not
+    # carry nested mounts over into the bind target.
+    options = [
+      "rbind"
+      "x-systemd.requires=zfs-mount.service"
+      "x-systemd.after=zfs-mount.service"
+    ];
+  };
+
+  # NFS must not start until the bind mount above is actually backed by the
+  # mounted zfs dataset, otherwise it exports the empty underlying directory.
+  systemd.services.nfs-server = {
+    requires = [ "export-archive.mount" ];
+    after = [ "export-archive.mount" ];
+  };
 
   # age.secrets.attic-env.file = ../secrets/attic-env.age;
   # services.atticd.environmentFile = config.age.secrets.attic-env.path;

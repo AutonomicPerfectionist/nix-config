@@ -123,6 +123,15 @@ in
     	}
     	'';
 
+  home.file."ssh/config".text = ''
+    Host panocular-a100-server
+      HostName 100.78.36.28
+      User brandenbutler
+    Host panocular-h200-server
+      HostName 100.121.170.110
+      User brandenbutler
+  '';
+
   xdg.enable = true;
   xdg.configFile."clustershell/config.d/sudo.conf".source = ./config/clustersh/sudo.conf;
   xdg.configFile."clustershell/groups.d/groups.yaml".source = ./config/clustersh/groups.yaml;

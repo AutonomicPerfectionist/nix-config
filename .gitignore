@@ -1,3 +1,7 @@
 
 # ignore all secrets files
 **/secrets.nix
+
+# nix build result symlinks
+result
+result-*

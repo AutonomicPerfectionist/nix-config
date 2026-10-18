@@ -472,7 +472,7 @@ in
     wheel-lines = 3;
   };
 
-  dconf.settings = {
+  dconf.settings = lib.mkIf userConfiguration.graphical {
     "org/gnome/shell" = {
       enabled-extensions = [
         "appindicatorsupport@rgcjonas.gmail.com"

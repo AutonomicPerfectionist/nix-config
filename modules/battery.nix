@@ -25,7 +25,9 @@ in
       after = [ "sysinit.target" ];
       script = ''
         for bat in /sys/class/power_supply/BAT*; do
-          [ -w "$bat/charge_control_end_threshold" ] && echo ${toString cfg.chargeLimit} > "$bat/charge_control_end_threshold"
+          if [ -w "$bat/charge_control_end_threshold" ]; then
+            echo ${toString cfg.chargeLimit} > "$bat/charge_control_end_threshold"
+          fi
         done
       '';
       serviceConfig.Type = "oneshot";

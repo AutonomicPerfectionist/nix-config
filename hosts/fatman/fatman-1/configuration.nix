@@ -41,7 +41,7 @@
   # zone turns out correct) once we know the real mapping.
   cluster.smfc.settings.GPU.ipmi_zone = 0;
 
-  services.llama.useCustomSource = true;
+  services.llama.useCustomSource = false;
   services.llama.rpcServer.enable = true;
   hardware.infiniband.guids = [
     "0x00117500007090a2"

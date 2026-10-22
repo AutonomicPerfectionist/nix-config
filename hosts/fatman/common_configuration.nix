@@ -50,6 +50,7 @@
     micro
     htop
     xclip
+    ipmitool
   ];
 
   system.stateVersion = "25.11";

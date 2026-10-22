@@ -26,7 +26,7 @@
   cluster.rdma.enable = true;
 
   services.llama.rpcServer.enable = true;
-  services.llama.useCustomSource = true;
+  services.llama.useCustomSource = false;
   # services.vllm-xpu.enable = true;
   # services.vllm-xpu.model = "NousResearch/Hermes-3-Llama-3.1-8B";
 

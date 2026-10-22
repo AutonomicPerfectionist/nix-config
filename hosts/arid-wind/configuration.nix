@@ -54,7 +54,7 @@
   };
 
   services.llama.rpcServer.enable = true;
-  services.llama.useCustomSource = true;
+  services.llama.useCustomSource = false;
 
   environment.systemPackages = with pkgs; [
     git

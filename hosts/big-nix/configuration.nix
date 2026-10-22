@@ -72,7 +72,7 @@
 
   scl.overlays.sycl-intel = true;
 
-  services.llama.useCustomSource = true;
+  services.llama.useCustomSource = false;
   services.llama.rpcServer.enable = true;
 
   services.vllm-xpu = {

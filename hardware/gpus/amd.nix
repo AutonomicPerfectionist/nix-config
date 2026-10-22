@@ -29,7 +29,8 @@ in
     {
 
       environment.systemPackages = with pkgs; [
-      	nvtopPackages.amd
+        nvtopPackages.amd
+        rocmPackages.rocm-smi
       ];
 
       hardware.graphics = {

@@ -34,7 +34,7 @@
   cluster.smfc.settings.GPU.gpu_device_ids = "0,1";
   cluster.smfc.settings.GPU.temp_calc = 2;
 
-  services.llama.useCustomSource = true;
+  services.llama.useCustomSource = false;
   services.llama.rpcServer.enable = true;
   hardware.infiniband.guids = [
     "0x0011750000707982"

@@ -22,7 +22,7 @@
   hardware.gpu.nvidia.enable = true;
   hardware.gpu.nvidia.cards = [ "tesla_v100" ];
 
-  services.llama.useCustomSource = true;
+  services.llama.useCustomSource = false;
   services.llama.rpcServer.enable = true;
   hardware.infiniband.guids = [
     "0x0011750000707982"

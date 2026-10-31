@@ -315,4 +315,74 @@ rec {
         }
       );
     };
+
+  # ── Realtime (llama.cpp 0.8.0) overlay ─────────────────────────────────────
+  # Adds NEW attributes only -- it deliberately does not touch the existing
+  # llama-cpp variants, so the cluster's working inference/RPC services stay
+  # on nixpkgs' pinned version while the voice stack moves ahead of it.
+  #
+  # Why a local bump at all: the `/v1/realtime` WebSocket server
+  # (tools/server/server-realtime.cpp) is new in llama.cpp 0.8.0 -- that file
+  # does not exist at the v0.7.0 tag, which is what nixpkgs master still ships
+  # (our pin is older still, 0.5.0). LiquidAI's LFM3-Omni-2B card names build
+  # b11960 (= v0.8.0) as its minimum for the same reason.
+  #
+  # Only `version` and `src` are overridden, not `npmDeps` directly: the
+  # upstream derivation builds its `npmDeps` from `finalAttrs.src` and
+  # `finalAttrs.npmDepsHash`, so the finalAttrs fixpoint propagates the new
+  # source into the npm fetch on its own -- same trick mkCustomSourceOverlay
+  # relies on. The web UI's lockfile changed between 0.5.0 and 0.8.0, hence a
+  # different npmDepsHash.
+  mkRealtimeOverlay =
+    {
+      version,
+      srcHash,
+      npmDepsHash,
+      buildNumber,
+      buildCommit,
+    }:
+    final: prev:
+    let
+      bump =
+        pkg:
+        pkg.overrideAttrs (old: {
+          inherit version npmDepsHash;
+
+          src = prev.fetchFromGitHub {
+            owner = "ggml-org";
+            repo = "llama.cpp";
+            tag = "v${version}";
+            hash = srcHash;
+          };
+
+          # nixpkgs hardcodes these in a `let` (they are not read from the
+          # release tarball, which ships no git metadata), so a version bump
+          # leaves them pointing at the old build. They are informational --
+          # `llama-server --version`, `/props`, the web UI -- but LiquidAI's
+          # model card names build b11960 as the minimum for LFM3-Omni, so a
+          # server that reports b11146 is actively misleading when checking
+          # whether the realtime API is present.
+          cmakeFlags =
+            lib.filter (f: !lib.hasPrefix "-DLLAMA_BUILD_NUMBER" f && !lib.hasPrefix "-DLLAMA_BUILD_COMMIT" f) (
+              old.cmakeFlags or [ ]
+            )
+            ++ [
+              (lib.cmakeFeature "LLAMA_BUILD_NUMBER" buildNumber)
+              (lib.cmakeFeature "LLAMA_BUILD_COMMIT" buildCommit)
+            ];
+
+          meta = (old.meta or { }) // {
+            description = "${old.meta.description or "llama.cpp"} (${version}, realtime audio API)";
+          };
+        });
+    in
+    {
+      llama-cpp-realtime = bump prev.llama-cpp;
+
+      llama-cpp-realtime-cuda = bump prev.llama-cpp-cuda;
+
+      llama-cpp-realtime-rocm = bump prev.llama-cpp-rocm;
+
+      llama-cpp-realtime-vulkan = bump prev.llama-cpp-vulkan;
+    };
 }

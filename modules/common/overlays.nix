@@ -52,6 +52,16 @@ let
     llamaCppFork = flake-inputs.llama-cpp-fork;
   };
 
+  # llama.cpp 0.8.0, for the /v1/realtime audio server used by
+  # modules/ml/omni.nix. Adds new attributes only -- see mkRealtimeOverlay.
+  realtimeOverlay = overlaysLib.mkRealtimeOverlay {
+    version = "0.8.0";
+    srcHash = "sha256-WQAtD8Hos6fEtgPQId7nZiLGyP4asAMKJYEXZid1nqc=";
+    npmDepsHash = "sha256-XLtEZsSFdk+2SyfXzBp8HQ2e27PQPpDCn1YjePU1/9w=";
+    buildNumber = "11960";
+    buildCommit = "8642541";
+  };
+
   rocmGpuTargetsOverlay = overlaysLib.mkRocmGpuTargetsOverlay {
     rocmGpuTargets = config.scl.overlays.rocm-gpu-targets;
   };
@@ -109,6 +119,11 @@ in
 
     # llm-agents nixpkgs overlay from its own flake input (always-on per user request).
     [ flake-inputs.llm-agents.overlays.shared-nixpkgs ]
+
+    # llama.cpp 0.8.0 under llama-cpp-realtime-*, for the /v1/realtime audio
+    # server. Safe to apply unconditionally: it only adds attributes, and Nix
+    # never evaluates them on hosts that do not use them.
+    [ realtimeOverlay ]
 
     # Source swap: replaces every llama-cpp variant with the rgerganov fork
     # when services.llama.useCustomSource = true.

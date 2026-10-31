@@ -8,7 +8,11 @@
   imports = [
     ../../modules/compute.nix
     ../../modules/ml/llama.nix
+    ../../modules/ml/whisper.nix
+    ../../modules/ml/tts.nix
+    ../../modules/ml/omni.nix
     ../../modules/distributed-builds.nix
+    ../../modules/cluster/env.nix
     ../../modules/cluster/mounts.nix
     ../../modules/cluster/management.nix
     ../../modules/cluster/distributed.nix

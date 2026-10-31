@@ -43,6 +43,62 @@
 
   services.llama.useCustomSource = false;
   services.llama.rpcServer.enable = true;
+
+  # ── German voice assistant: chat LLM ────────────────────────────────────
+  # Moved here from fatman-3 (MI60): CUDA on a real compute-capability-7.0
+  # card is far less fraught than Vulkan on gfx906, and this frees the MI60
+  # for just STT/TTS. See hosts/fatman/fatman-3/configuration.nix for the
+  # rest of the pipeline (Open WebUI, whisper.cpp, speech.cpp) -- it reaches
+  # this host over the cluster's 40GbE network.
+  #
+  # Qwen3.5-9B replaces Mistral Nemo 12B. Verified by hand against the real
+  # V100 (2026-10-25): contrary to this repo's earlier assumption, it does
+  # NOT default to non-thinking at 9B -- a request with no reasoning flag
+  # burned its entire token budget on `reasoning_content` chain-of-thought
+  # and returned an EMPTY `content` field. `--reasoning off` below forces it
+  # off server-side regardless of what Open WebUI sends per-request, which
+  # also fixes the original "wall of text into TTS" concern. With it off,
+  # German replies are fluent and natural (verified with both a direct ask
+  # and a short-story generation). Q8_0 rather than Q4_K_M this
+  # time -- the V100's 16GB gives far more headroom than the MI60 ever did
+  # (~9.5GB model weights vs. the card's 16GB, instead of sharing 32GB
+  # three ways with whisper+speech), so there's no reason to quantize this
+  # aggressively; the complaint that the old setup felt "kind of stupid"
+  # may partly have been Q4 quantization loss as well as model choice.
+  services.llama.enable = true;
+  services.llama.hfRepo = "bartowski/Qwen_Qwen3.5-9B-GGUF:Q8_0";
+  services.llama.user = "branden";
+  # --host 0.0.0.0: llama-server defaults to 127.0.0.1 only, which would be
+  # unreachable from fatman-3 -- matches the RPC server above, which already
+  # binds 0.0.0.0 on this same trusted internal network (firewall disabled
+  # cluster-wide). --ctx-size pinned defensively: llama-server's automatic
+  # context-size fitting produced an absurd n_ctx and crashed on the MI60
+  # (full writeup on fatman-3); pinning a sane value avoids that path
+  # entirely regardless of GPU -- verified safe on CUDA too.
+  #
+  # --no-mmproj was the fix for a severe, non-obvious perf bug found by hand
+  # on the real V100 (2026-10-26): this GGUF ships a vision tower (mmproj),
+  # and llama-server's auto layer-fit (-ngl auto / --fit on) was reserving
+  # VRAM headroom for that vision graph, which pushed some LLM layers onto
+  # the CPU to compensate. Measured effect: only 16.5 tok/s at ~16% GPU
+  # utilization. Forcing `-ngl 999` "fixed" the speed (70 tok/s, 93% util)
+  # but then OOM'd allocating the vision graph's own compute buffer
+  # (irrelevant anyway -- a voice-only assistant never sends images).
+  # `--no-mmproj` drops the vision tower entirely, which lets auto-fit put
+  # every LLM layer on the V100 correctly with no manual override and no
+  # error: confirmed 69.8 tok/s, 93% GPU util, and VRAM dropped to
+  # 10.8GB/16GB used (vs. 14.8GB with the vision tower loaded) -- a much
+  # healthier margin too.
+  services.llama.extraArgs = [
+    "--host"
+    "0.0.0.0"
+    "--ctx-size"
+    "32768"
+    "--reasoning"
+    "off"
+    "--no-mmproj"
+  ];
+
   hardware.infiniband.guids = [
     "0x00117500007090a2"
   ];

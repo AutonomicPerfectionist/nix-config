@@ -10,6 +10,7 @@
     flake-inputs.home-manager.nixosModules.default
     flake-inputs.agenix.nixosModules.default
     ./overlays.nix
+    ./network-metrics.nix
     ../nix-settings.nix
     ../avahi.nix
     ../../users/branden
@@ -36,10 +37,28 @@
 
   networking.networkmanager.enable = true;
   networking.firewall.enable = false;
+  # Several hosts have both a fast (10/40Gb) data NIC and a slow (1Gb)
+  # management NIC on the same subnet; NetworkManager assigns route metrics
+  # by activation order, not speed, which has left the 1Gb link winning the
+  # default route on fatman-1 and all four thunder-budget hosts. This pins
+  # metric to actual link speed everywhere instead.
+  networking.preferFastestRoute.enable = true;
   services.resolved = {
     enable = true;
     settings.Resolve.MulticastDNS = "resolve";
   };
+  # glibc's default address-selection policy (RFC 6724) ranks any native
+  # IPv6 answer -- including a link-local fe80:: one, which isn't carved
+  # out separately in the default table -- above plain IPv4. Combined with
+  # systemd-resolved's mDNS resolution answering both A and AAAA, a plain
+  # lookup of a *.local name picks the IPv6 link-local address first even
+  # though an IPv4 address (the one actually wanted for cross-host service
+  # URLs in this repo) resolves fine too. This is the standard documented
+  # fix (see `man gai.conf`'s own example) to make IPv4 win when both are
+  # available, without disabling IPv6 itself.
+  environment.etc."gai.conf".text = ''
+    precedence ::ffff:0:0/96  100
+  '';
 
   time.timeZone = "America/Chicago";
 

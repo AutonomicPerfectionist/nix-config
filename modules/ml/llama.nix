@@ -22,6 +22,25 @@ let
   useRocm = config.hardware.gpu.amd.enable or false;
   useSycl = config.hardware.gpu.intel.enable or false;
 
+  # ── Service identity ──────────────────────────────────────────────────────
+  # Defaults to DynamicUser (unchanged behaviour). Set user/group when a
+  # service needs to write into a path owned by a real account -- e.g. the
+  # shared HF_HOME cache on /mnt/cluster is owned by a specific user (not
+  # world-writable), and DynamicUser's ephemeral per-start uid has no way to
+  # get write access to that short of making the cache world-writable, which
+  # is more invasive than just running as the owning user. When a fixed user
+  # is set, skip gpuServiceConfig's SupplementaryGroups override too: systemd
+  # only needs that override to get DynamicUser (which starts in zero
+  # supplementary groups) into render/video -- a real account already carries
+  # its normal group memberships, and explicitly setting
+  # SupplementaryGroups= on a non-DynamicUser service would *replace* those
+  # instead of adding to them.
+  identityServiceConfig =
+    if cfg.user != null then
+      { User = cfg.user; } // lib.optionalAttrs (cfg.group != null) { Group = cfg.group; }
+    else
+      { DynamicUser = true; } // gpuServiceConfig;
+
   # ── Extra serviceConfig for GPU-backed llama units ───────────────────────
   # The llama services run as DynamicUser, whose transient uid is in no groups
   # by default — so it cannot open the DRI render node (/dev/dri/renderD*,
@@ -174,6 +193,23 @@ in
 
     enable = lib.mkEnableOption "llama.cpp inference server";
 
+    user = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = ''
+        Run the llama/rpc/embeddings services as this user instead of a
+        DynamicUser. Needed when hfRepo points at a HF_HOME cache owned by a
+        real account rather than world-writable -- DynamicUser's ephemeral
+        per-start uid has no way to get write access to that otherwise.
+      '';
+    };
+
+    group = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Group to run as when user is set. Defaults to that user's primary group when null.";
+    };
+
     package = lib.mkOption {
       type = lib.types.package;
       default = llamaPkg;
@@ -191,10 +227,40 @@ in
       description = "Port on which the llama.cpp inference server listens.";
     };
 
+    extraArgs = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      example = [
+        "--flash-attn"
+        "off"
+      ];
+      description = ''
+        Additional arguments forwarded verbatim to the inference server's
+        llama-server invocation. E.g. "--flash-attn" "off" works around a
+        known RADV/Vulkan crash on Vega (gfx906) compiling the flash
+        attention shader (ggml-backend.cpp pre-allocated tensor abort during
+        KV-cache setup).
+      '';
+    };
+
     model = lib.mkOption {
-      type = lib.types.path;
+      type = lib.types.str;
       default = "";
-      description = "Path to the GGUF model file for the inference server.";
+      description = "Path to the GGUF model file for the inference server. Mutually exclusive with hfRepo.";
+    };
+
+    hfRepo = lib.mkOption {
+      type = lib.types.str;
+      default = "";
+      example = "bartowski/Mistral-Nemo-Instruct-2407-GGUF:Q4_K_M";
+      description = ''
+        Hugging Face repo (optionally ":quant") to auto-download and serve,
+        passed straight through to llama-server's native `-hf` flag.  This
+        respects HF_HOME (falling back to it when LLAMA_CACHE is unset,
+        caching under $HF_HOME/hub -- the same layout huggingface_hub uses),
+        so it shares the cluster-wide model cache.  Mutually exclusive with
+        model.
+      '';
     };
 
     # ── RPC server ──────────────────────────────────────────────────────────
@@ -234,8 +300,8 @@ in
     (lib.mkIf cfg.enable {
       assertions = [
         {
-          assertion = cfg.model != "";
-          message = "services.llama.model must be set when services.llama.enable is true.";
+          assertion = (cfg.model != "") != (cfg.hfRepo != "");
+          message = "services.llama: set exactly one of model or hfRepo when services.llama.enable is true.";
         }
       ];
 
@@ -244,17 +310,21 @@ in
         wantedBy = [ "multi-user.target" ];
         after = [ "network.target" ];
 
+        environment = {
+          HF_HOME = config.environment.variables.HF_HOME or "";
+        };
+
         serviceConfig = {
           Type = "simple";
           ExecStart = ''
             ${cfg.package}/bin/llama-server \
-              --model ${cfg.model} \
-              --port ${toString cfg.port}
+              ${if cfg.hfRepo != "" then "-hf ${cfg.hfRepo}" else "--model ${cfg.model}"} \
+              --port ${toString cfg.port} \
+              ${lib.escapeShellArgs cfg.extraArgs}
           '';
           Restart = "on-failure";
-          DynamicUser = true;
         }
-        // gpuServiceConfig;
+        // identityServiceConfig;
       };
     })
 
@@ -280,9 +350,8 @@ in
             if cfg.useCustomSource || useSycl then "rpc-server" else "ggml-rpc-server"
           } --host 0.0.0.0";
           Restart = "on-failure";
-          DynamicUser = true;
         }
-        // gpuServiceConfig;
+        // identityServiceConfig;
       };
     })
 
@@ -309,9 +378,8 @@ in
               --embedding
           '';
           Restart = "on-failure";
-          DynamicUser = true;
         }
-        // gpuServiceConfig;
+        // identityServiceConfig;
       };
     })
   ];

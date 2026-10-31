@@ -58,62 +58,66 @@ in
     EDITOR = "hx";
   };
 
-  home.packages = with pkgs; [
-    bat
-    comma
-    eza
-    nerd-fonts.comic-shanns-mono
-    nerd-fonts.meslo-lg
-    nerd-fonts.fira-code
-    python314Packages.clustershell
-    nix-ld
-    devenv
-    direnv
-    llm-agents.omp
-    mosh
-    llm-agents.claude-code
+  home.packages =
+    with pkgs;
+    [
+      bat
+      comma
+      eza
+      nerd-fonts.comic-shanns-mono
+      nerd-fonts.meslo-lg
+      nerd-fonts.fira-code
+      python314Packages.clustershell
+      nix-ld
+      devenv
+      direnv
+      llm-agents.omp
+      mosh
+      llm-agents.claude-code
 
-    # Nix linting, formatting, and IDE support
-    deadnix
-    nixfmt-rfc-style
-    nil
-    # vscodium
-    # vscode
-    # neovim
-    # flatpak
-    # obsidian
-    # vlc
-    # kitty
-    # spotify
-    # gimp
-    # asdf-vm
+      # Nix linting, formatting, and IDE support
+      deadnix
+      nixfmt-rfc-style
+      nil
+      # vscodium
+      # vscode
+      # neovim
+      # flatpak
+      # obsidian
+      # vlc
+      # kitty
+      # spotify
+      # gimp
+      # asdf-vm
 
-    # ===== CORE TERMINAL TOOLING =====
-    # helix
-    glow
-    zoxide
-    lazygit
-    difftastic
-    delta
-    dust
-    procs
-    yazi
-    ast-grep
-    just
-    zellij
-    chafa
-    viu
-    timg
+      # ===== CORE TERMINAL TOOLING =====
+      # helix
+      glow
+      zoxide
+      lazygit
+      difftastic
+      delta
+      dust
+      procs
+      yazi
+      ast-grep
+      just
+      zellij
+      chafa
+      viu
+      timg
 
-    # LSPs / dev tooling
-    basedpyright
-    ruff
-    clang-tools
+      # LSPs / dev tooling
+      basedpyright
+      ruff
+      clang-tools
 
-    # shell UX plugins (installed via nixpkgs)
-    zsh-you-should-use
-    zsh-fzf-tab
-  ];
+      # shell UX plugins (installed via nixpkgs)
+      zsh-you-should-use
+      zsh-fzf-tab
+    ]
+    # notify-send, for the zsh-auto-notify plugin
+    ++ lib.optional userConfiguration.graphical pkgs.libnotify;
 
   fonts.fontconfig.enable = true;
 
@@ -267,23 +271,30 @@ in
       }
 
       {
-        name = "zsh-auto-notify";
-        src = pkgs.fetchFromGitHub {
-          owner = "MichaelAquilina";
-          repo = "zsh-auto-notify";
-          rev = "0.8.0";
-          sha256 = "sha256-bY0qLX5Kpt2x4KnfvXjYK2+BhR3zKBgGsCvIxSzApws=";
-        };
-      }
-
-      {
         name = "forgit";
         src = pkgs.zsh-forgit.src;
       }
 
       {
         name = "zsh-fzf-tab";
+        # Upstream ships fzf-tab.plugin.zsh, not zsh-fzf-tab.plugin.zsh.
+        file = "fzf-tab.plugin.zsh";
         src = pkgs.zsh-fzf-tab.src;
+      }
+    ]
+    # auto-notify needs notify-send, so it is only useful on a desktop.
+    ++ lib.optionals userConfiguration.graphical [
+      {
+        name = "zsh-auto-notify";
+        # Upstream ships auto-notify.plugin.zsh, which does not match the
+        # directory name home-manager derives the source path from.
+        file = "auto-notify.plugin.zsh";
+        src = pkgs.fetchFromGitHub {
+          owner = "MichaelAquilina";
+          repo = "zsh-auto-notify";
+          rev = "0.8.0";
+          sha256 = "sha256-bY0qLX5Kpt2x4KnfvXjYK2+BhR3zKBgGsCvIxSzApws=";
+        };
       }
     ];
 
@@ -308,6 +319,41 @@ in
 
     # NixOS switch function with completion
     initContent = ''
+            # =========================
+            # CARAPACE (completion fallback)
+            # =========================
+            # Carapace registers itself for ~800 commands, clobbering the
+            # completers zsh/nixpkgs already ship for about a third of them.
+            # Its specs for those are often thinner than zsh's: `sed -n 1p <TAB>`
+            # stops completing paths at all, and `git checkout <TAB>` only emits
+            # fully-qualified refs, so a remote-only branch never completes under
+            # its bare DWIM name.
+            #
+            # So: snapshot the completers compinit set up, let carapace register
+            # everything, then hand the overlapping commands back to zsh.
+            # Carapace keeps the ~530 commands zsh has no completer for, which is
+            # the part that is actually worth having.
+            #
+            # Add a command here to deliberately leave it with carapace.
+            typeset -a carapace_preferred=()
+
+            if (( ''${+_comps} )); then
+              typeset -A _zsh_native_comps
+              _zsh_native_comps=("''${(@kv)_comps}")
+
+              source <(${lib.getExe config.programs.carapace.finalPackage} _carapace zsh)
+
+              typeset _cmd
+              for _cmd in "''${(@k)_zsh_native_comps}"; do
+                (( ''${carapace_preferred[(Ie)$_cmd]} )) && continue
+                _comps[$_cmd]="''${_zsh_native_comps[$_cmd]}"
+              done
+              unset _cmd _zsh_native_comps
+            else
+              source <(${lib.getExe config.programs.carapace.finalPackage} _carapace zsh)
+            fi
+            unset carapace_preferred
+
             # =========================
             # DEV CHEATSHEET
             # =========================
@@ -412,9 +458,11 @@ in
     '';
   };
 
-  # Carapace is a better tab-completion manager
+  # Carapace fills in completions for tools zsh does not know about.
+  # Its zsh integration is wired up by hand in programs.zsh.initContent above
+  # so that zsh's own completers keep priority -- see the comment there.
   programs.carapace.enable = true;
-  programs.carapace.enableZshIntegration = true;
+  programs.carapace.enableZshIntegration = false;
 
   programs.opencode.enable = true;
 

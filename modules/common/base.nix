@@ -79,6 +79,7 @@
   nixpkgs.config.allowUnfree = true;
 
   services.openssh.enable = true;
+  services.tailscale.enable = true;
 
   home-manager = {
     extraSpecialArgs = { inherit flake-inputs; };

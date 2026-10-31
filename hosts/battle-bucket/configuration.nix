@@ -49,6 +49,7 @@ in
   };
 
   hardware.gpu.nvidia.enable = true;
+  hardware.nvidia.dynamicBoost.enable = true;
 
   boot.loader.systemd-boot.configurationLimit = 8;
 

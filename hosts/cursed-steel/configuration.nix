@@ -77,6 +77,7 @@ in
   '';
 
   hardware.firmware = [ amdxdna-firmware ];
+  hardware.nvidia.dynamicBoost.enable = true;
 
   services.udev.extraRules = ''
     SUBSYSTEM=="accel", KERNEL=="accel[0-9]*", GROUP="video", MODE="0660"
@@ -97,6 +98,10 @@ in
     }
   ];
 
+  boot.kernelParams = [
+    "ttm.pages_limit=2883584"
+    "ttm.page_pool_size=2883584"
+  ];
   environment.sessionVariables = {
     XILINX_XRT = "${xrt-combined}/opt/xilinx/xrt";
   };

@@ -27,6 +27,7 @@ in
   imports = [
     ./hardware-configuration.nix
     ./disk-config.nix
+    ./hp-gpu-dstate.nix
     ../../hardware/gpus/nvidia.nix
 
     ../../modules/battery.nix

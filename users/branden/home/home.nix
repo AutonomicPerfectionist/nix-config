@@ -23,6 +23,7 @@ in
       ./slack.nix
       ./vscode.nix
       ./vlc.nix
+      ./default-apps.nix
     ]
     ++ [
       # NOTE: GPU/niri nixpkgs overlays are NOT imported here. On NixOS,
@@ -56,6 +57,7 @@ in
   programs.bash.enable = true;
   home.sessionVariables = {
     EDITOR = "hx";
+    VISUAL = "hx";
   };
 
   home.packages = with pkgs; [

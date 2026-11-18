@@ -8,6 +8,12 @@
   # This is required for some of these libs
   nixpkgs.config.allowUnfree = true;
 
+  # gtk2 is marked broken in nixpkgs (last release 2020, removal planned for
+  # 27.05, see NixOS/nixpkgs#410814), but nix-ld exists precisely to run old
+  # unpatched binaries that still link against it. Keep it usable with a
+  # warning until it is actually removed.
+  nixpkgs.config.problems.handlers."gtk+".broken = "warn";
+
   programs.nix-ld = {
     enable = true;
     libraries = with pkgs; [
@@ -105,7 +111,9 @@
       freeglut
       libjpeg
       libpng
-      libpng12
+      # libpng12 removed from nixpkgs (insecure, long superseded by the
+      # libpng 1.6 ABI); binaries needing libpng12.so.0 can no longer be
+      # supported here.
       libsamplerate
       libmikmod
       libtheora

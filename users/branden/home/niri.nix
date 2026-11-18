@@ -12,7 +12,8 @@
         keyboard = {
           xkb = {
             layout = "us";
-            variant = "";
+            # variant defaults to null (no variant); the updated niri-flake
+            # module rejects "" (type is now `null or non-empty string`).
           };
         };
         touchpad = {

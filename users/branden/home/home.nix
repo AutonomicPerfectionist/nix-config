@@ -58,66 +58,81 @@ in
     EDITOR = "hx";
   };
 
-  home.packages =
-    with pkgs;
-    [
-      bat
-      comma
-      eza
-      nerd-fonts.comic-shanns-mono
-      nerd-fonts.meslo-lg
-      nerd-fonts.fira-code
-      python314Packages.clustershell
-      nix-ld
-      devenv
-      direnv
-      llm-agents.omp
-      mosh
-      llm-agents.claude-code
+  home.packages = with pkgs; [
+    bat
+    comma
+    eza
+    nerd-fonts.comic-shanns-mono
+    nerd-fonts.meslo-lg
+    nerd-fonts.fira-code
+    # nixpkgs' clustershell postPatch loops over tests/* running
+    # substituteInPlace on each entry, but the sdist ships a tests/bin
+    # *directory*, which substituteInPlace rejects ("file 'tests/bin' does
+    # not exist"). Upstream master guards the loop with [ -f ]; reproduce
+    # that here until our nixpkgs pin picks the fix up.
+    # NOTE: overridePythonAttrs, not overrideAttrs — the latter silently
+    # ignores doCheck on buildPythonPackage derivations.
+    (python314Packages.clustershell.overridePythonAttrs (old: {
+      postPatch =
+        builtins.replaceStrings
+          [ "substituteInPlace $f" ]
+          [
+            "[ -f \"$f\" ] || continue\n      substituteInPlace $f"
+          ]
+          old.postPatch;
+      # The sdist's test suite also fails on python 3.14 (relative `.TLib`
+      # imports etc.); upstream master disables the affected tests. Skip
+      # the suite until our pin catches up (pythonImportsCheck still runs).
+      doCheck = false;
+    }))
+    nix-ld
+    devenv
+    direnv
+    llm-agents.omp
+    mosh
+    llm-agents.claude-code
 
-      # Nix linting, formatting, and IDE support
-      deadnix
-      nixfmt-rfc-style
-      nil
-      # vscodium
-      # vscode
-      # neovim
-      # flatpak
-      # obsidian
-      # vlc
-      # kitty
-      # spotify
-      # gimp
-      # asdf-vm
+    # Nix linting, formatting, and IDE support
+    deadnix
+    nixfmt-rfc-style
+    nil
+    # vscodium
+    # vscode
+    # neovim
+    # flatpak
+    # obsidian
+    # vlc
+    # kitty
+    # spotify
+    # gimp
+    # asdf-vm
 
-      # ===== CORE TERMINAL TOOLING =====
-      # helix
-      glow
-      zoxide
-      lazygit
-      difftastic
-      delta
-      dust
-      procs
-      yazi
-      ast-grep
-      just
-      zellij
-      chafa
-      viu
-      timg
+    # ===== CORE TERMINAL TOOLING =====
+    # helix
+    glow
+    zoxide
+    lazygit
+    difftastic
+    delta
+    dust
+    procs
+    yazi
+    ast-grep
+    just
+    zellij
+    chafa
+    viu
+    timg
 
-      # LSPs / dev tooling
-      basedpyright
-      ruff
-      clang-tools
+    # LSPs / dev tooling
+    basedpyright
+    ruff
+    clang-tools
 
-      # shell UX plugins (installed via nixpkgs)
-      zsh-you-should-use
-      zsh-fzf-tab
-    ]
-    # notify-send, for the zsh-auto-notify plugin
-    ++ lib.optional userConfiguration.graphical pkgs.libnotify;
+    # shell UX plugins (installed via nixpkgs)
+    zsh-you-should-use
+    zsh-fzf-tab
+  ];
 
   fonts.fontconfig.enable = true;
 
@@ -280,21 +295,6 @@ in
         # Upstream ships fzf-tab.plugin.zsh, not zsh-fzf-tab.plugin.zsh.
         file = "fzf-tab.plugin.zsh";
         src = pkgs.zsh-fzf-tab.src;
-      }
-    ]
-    # auto-notify needs notify-send, so it is only useful on a desktop.
-    ++ lib.optionals userConfiguration.graphical [
-      {
-        name = "zsh-auto-notify";
-        # Upstream ships auto-notify.plugin.zsh, which does not match the
-        # directory name home-manager derives the source path from.
-        file = "auto-notify.plugin.zsh";
-        src = pkgs.fetchFromGitHub {
-          owner = "MichaelAquilina";
-          repo = "zsh-auto-notify";
-          rev = "0.8.0";
-          sha256 = "sha256-bY0qLX5Kpt2x4KnfvXjYK2+BhR3zKBgGsCvIxSzApws=";
-        };
       }
     ];
 

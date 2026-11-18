@@ -45,7 +45,12 @@
     };
     noctalia = {
       url = "github:noctalia-dev/noctalia/legacy-v4";
-      inputs.nixpkgs.follows = "nixpkgs";
+      # legacy-v4's quickshell fork (noctalia-qs) is a June 2026 snapshot
+      # that does not build against unstable's Qt 6.12 ("Meta Types must
+      # be fully defined"). Build it against stable's Qt 6.10 instead —
+      # noctalia is a self-contained wrapped Qt app, so this is safe.
+      # Revisit when migrating to noctalia v5 (a config-schema rewrite).
+      inputs.nixpkgs.follows = "nixpkgs-stable";
     };
     niri.url = "github:epireyn/niri-flake";
 

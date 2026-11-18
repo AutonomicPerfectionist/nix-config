@@ -12,7 +12,7 @@
 
   config = lib.mkIf config.scl.graphical.noctalia.enable {
     environment.systemPackages = [
-      flake-inputs.noctalia.packages.${pkgs.system}.default
+      flake-inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default
     ];
   };
 }
